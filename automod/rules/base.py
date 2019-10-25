@@ -1,7 +1,8 @@
 import discord
 from redbot.core.config import Config
 
-from ..constants import DEFAULT_ACTION
+from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS
+
 
 class BaseRule:
     def __init__(self, config):
@@ -40,7 +41,8 @@ class BaseRule:
             )
         except KeyError:
             await self.config.guild(guild).set_raw(
-                    self.rule_name, "action_to_take", value=DEFAULT_ACTION)
+                self.rule_name, "action_to_take", value=DEFAULT_ACTION
+            )
             return DEFAULT_ACTION
 
     async def set_action_to_take(self, action: str, guild: discord.Guild):
@@ -104,4 +106,44 @@ class BaseRule:
             self.rule_name, "whitelist_roles"
         )
         roles.remove(role.id)
-        await self.config.guild(guild).set_raw(self.rule_name, "whitelist_roles", value=roles)
+        await self.config.guild(guild).set_raw(
+            self.rule_name, "whitelist_roles", value=roles
+        )
+
+    async def toggle_sending_message(self, guild: discord.Guild) -> (bool, bool):
+        try:
+            before = await self.config.guild(guild).get_raw(self.rule_name, "send_dm")
+        except KeyError:
+            before = await self.config.guild(guild).set_raw(
+                self.rule_name, "send_dm", value=DEFAULT_OPTIONS["send_dm"]
+            )
+
+        await self.config.guild(guild).set_raw(
+            self.rule_name, "send_dm", value=(not before)
+        )
+        return before, not before
+
+    async def set_mute_role(self, guild: discord.Guild, role: discord.Role) -> tuple:
+
+        before = None
+        try:
+            before = await self.config.guild(guild).get_raw(
+                self.rule_name, "role_to_add"
+            )
+        except KeyError:
+            # role not set yet probably
+            pass
+
+        await self.config.guild(guild).set_raw(
+            self.rule_name, "role_to_add", value=role.id
+        )
+
+        before_role = None
+        if before:
+            before_role = guild.get_role(before)
+
+        after_role = guild.get_role(
+                await self.config.guild(guild).get_raw(self.rule_name, "role_to_add")
+            )
+
+        return before_role, after_role

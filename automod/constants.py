@@ -9,3 +9,15 @@ ACTION_CONFIRMATION = {
 }
 
 DEFAULT_ACTION = "kick"
+
+DEFAULT_OPTIONS = {
+    "role_to_add": None,
+    "is_ignored": False,
+    "whitelist_channels": [],
+    "whitelist_roles": [],
+    "whitelist_users": [],
+    "action_to_take": DEFAULT_ACTION,
+    "is_enabled": True,
+    "delete_message": True,
+    "send_dm": True,
+}

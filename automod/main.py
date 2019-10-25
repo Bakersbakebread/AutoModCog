@@ -1,6 +1,14 @@
 import discord
 from functools import partial
-from redbot.core.commands import Cog, command, group
+from redbot.core.commands import (
+    Cog,
+    command,
+    group,
+    check,
+    CheckFailure,
+    Converter,
+    BadArgument,
+)
 from redbot.core import Config
 import logging
 from .constants import *
@@ -9,7 +17,10 @@ from .utils import transform_bool, get_option_reaction, thumbs_up_success, yes_o
 
 from .rules.wallspam import WallSpamRule
 
+from .constants import DEFAULT_OPTIONS
+
 log = logging.getLogger(name="red.breadcogs.automod")
+
 
 class AutoMod(Cog):
     def __init__(self, bot, *args, **kwargs):
@@ -19,18 +30,7 @@ class AutoMod(Cog):
             self, identifier=78945698745687, force_registration=True
         )
         self.wallspam = WallSpamRule(self.config)
-        self.guild_defaults = {
-            WallSpamRule.__class__.__name__: {
-                "roles_to_message": [],
-                "is_ignored": False,
-                "whitelist_channels": [],
-                "whitelist_roles": [],
-                "whitelist_users": [],
-                "action_to_take": DEFAULT_ACTION,
-                "is_enabled": True,
-                "delete_message": True,
-            }
-        }
+        self.guild_defaults = {WallSpamRule.__class__.__name__: DEFAULT_OPTIONS}
         self.config.register_guild(**self.guild_defaults)
         self.rules_map = {"wallspam": self.wallspam}
         self.rules_string = "\n".join([key for key in self.rules_map])
@@ -38,8 +38,8 @@ class AutoMod(Cog):
     async def is_a_rule(self, rule):
         try:
             return self.rules_map[rule]
-        except KeyError:
-            return False
+        except:
+            return None
 
     async def _take_action(self, rule, message: discord.Message):
         guild: discord.Guild = message.guild
@@ -48,36 +48,39 @@ class AutoMod(Cog):
 
         action_to_take = await rule.get_action_to_take(guild)
         self.bot.dispatch(f"automod_{rule.rule_name}", author, message)
-        log.info(f"{rule.rule_name} - {author} ({author.id}) - {guild} ({guild.id}) - {channel} ({channel.id})")
+        log.info(
+            f"{rule.rule_name} - {author} ({author.id}) - {guild} ({guild.id}) - {channel} ({channel.id})"
+        )
 
         _action_reason = f"[AutoMod] {rule.rule_name}"
 
         if action_to_take == "third_party":
+            await channel.send("Would do nothing (Third Party)")
             return
+
         elif action_to_take == "kick":
             try:
-                await author.kick(reason=_action_reason)
+                # await author.kick(reason=_action_reason)
+                await channel.send("would kick user")
                 log.info(f"{rule.rule_name} - Kicked {author} ({author.id})")
             except discord.errors.Forbidden:
-                log.warning(f"{rule.rule_name} - Failed to kick user, missing permissions")
-
-        elif action_to_take == "message":
-            await message.channel.send("Would send message to pre-chosen channel")
-            log.info(f"{rule.rule_name} - Message channel [  ]")
+                log.warning(
+                    f"{rule.rule_name} - Failed to kick user, missing permissions"
+                )
 
         elif action_to_take == "add_role":
             await message.channel.send("Would add role to user")
             log.info(f"{rule.rule_name} - Added Role (role) to {author} ({author.id})")
 
         elif action_to_take == "ban":
-            try:
-                await guild.ban(user = author, reason = _action_reason, delete_message_days=1)
-                log.info(f"{rule.rule_name} - Banned {author} ({author.id})")
-            except discord.errors.Forbidden:
-                log.warning(f"{rule.rule_name} - Failed to ban user, missing permissions")
-            except discord.errors.HTTPException:
-                log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
-
+            await channel.send("Would ban user")
+            # try:
+            #     await guild.ban(user = author, reason = _action_reason, delete_message_days=1)
+            #     log.info(f"{rule.rule_name} - Banned {author} ({author.id})")
+            # except discord.errors.Forbidden:
+            #     log.warning(f"{rule.rule_name} - Failed to ban user, missing permissions")
+            # except discord.errors.HTTPException:
+            #     log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
 
     @Cog.listener(name="on_automod_WallSpamRule")
     async def _do_stuff(self, author, message):
@@ -112,7 +115,7 @@ class AutoMod(Cog):
                 return
 
             if await rule.is_offensive(message):
-                await self._take_action(rule, author, message)
+                await self._take_action(rule, message)
 
     @group()
     async def automod(self, ctx):
@@ -133,7 +136,7 @@ class AutoMod(Cog):
         rule = await self.is_a_rule(rule_name)
         if not rule:
             return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
-        before, after = await rule.toggle_enabled(ctx.guild)
+        before, after = await rule_name.toggle_enabled(ctx.guild)
         await ctx.send(
             f"**{rule_name.title()}** set from `{transform_bool(before)}` to `{transform_bool(after)}`"
         )
@@ -183,6 +186,17 @@ class AutoMod(Cog):
         )
 
     @automod.command()
+    async def message(self, ctx, rule_name):
+        """"
+        Toggles whether to send a Private Message to the user.
+
+        This method will fail silently.
+        """
+        rule = await self.is_a_rule(rule_name)
+        if not rule:
+            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
+
+    @automod.command()
     async def whitelistrole(self, ctx, rule_name, role: discord.Role):
         rule = await self.is_a_rule(rule_name)
         if not rule:
@@ -197,3 +211,20 @@ class AutoMod(Cog):
             if result:
                 await rule.remove_whitelist_role(ctx.guild, role)
         await ctx.send("Done")
+
+    @automod.command()
+    async def role(self, ctx, rule_name, role: discord.Role):
+        """
+        Set the role to add to offender
+
+        When a rule offence is found and action to take is set to "Add Role", this role is the one that will be added.
+        """
+        rule = await self.is_a_rule(rule_name)
+        if not rule:
+            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
+
+        before, after = await rule.set_mute_role(ctx.guild, role)
+
+        await ctx.send(
+            f"Role to add set from `{before}` to `{after}`"
+        )
