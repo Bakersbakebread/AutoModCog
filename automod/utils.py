@@ -3,6 +3,12 @@ import discord
 from redbot.core.utils.predicates import ReactionPredicate
 from redbot.core.utils.menus import start_adding_reactions
 
+async def maybe_add_role(user: discord.Member, role:discord.Role):
+    """Adds role to user, if the user already has the role fails silently"""
+    has_role = any(role == r.id for r in user.roles)
+    if has_role:
+        return
+    await user.add_roles(role, reason="Automod rule add")
 
 async def thumbs_up_success(message: str):
     return f"`👍🏼` {message}"

@@ -12,6 +12,7 @@ class BaseRule:
     async def print_class_name(self):
         print(type(self).__name__)
 
+    #enabling
     async def is_enabled(self, guild: discord.Guild) -> bool or None:
         """Helper to return the status of Rule"""
         try:
@@ -33,6 +34,7 @@ class BaseRule:
             )
             return False, True
 
+    #actions
     async def get_action_to_take(self, guild: discord.Guild) -> str:
         """Helper to return what action is currently set on offence"""
         try:
@@ -79,7 +81,6 @@ class BaseRule:
                 return True
         return False
 
-    # guild specifics
     async def append_whitelist_role(self, guild: discord.Guild, role: discord.Role):
         """Adds role to whitelist"""
         try:
@@ -147,3 +148,5 @@ class BaseRule:
             )
 
         return before_role, after_role
+
+

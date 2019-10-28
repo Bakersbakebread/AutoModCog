@@ -9,11 +9,12 @@ from redbot.core.commands import (
     Converter,
     BadArgument,
 )
+from .settings import Settings
 from redbot.core import Config
 import logging
 from .constants import *
 
-from .utils import transform_bool, get_option_reaction, thumbs_up_success, yes_or_no
+from .utils import transform_bool, get_option_reaction, thumbs_up_success, yes_or_no, maybe_add_role
 
 from .rules.wallspam import WallSpamRule
 
@@ -22,7 +23,7 @@ from .constants import DEFAULT_OPTIONS
 log = logging.getLogger(name="red.breadcogs.automod")
 
 
-class AutoMod(Cog):
+class AutoMod(Cog, Settings):
     def __init__(self, bot, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bot = bot
@@ -30,10 +31,16 @@ class AutoMod(Cog):
             self, identifier=78945698745687, force_registration=True
         )
         self.wallspam = WallSpamRule(self.config)
-        self.guild_defaults = {WallSpamRule.__class__.__name__: DEFAULT_OPTIONS}
+        self.guild_defaults = {
+            "settings": { "announcement_channel": None, "is_announcement_enabled": True },
+            WallSpamRule.__class__.__name__: DEFAULT_OPTIONS
+        }
         self.config.register_guild(**self.guild_defaults)
         self.rules_map = {"wallspam": self.wallspam}
         self.rules_string = "\n".join([key for key in self.rules_map])
+
+    # TODO:
+    # Add checks
 
     async def is_a_rule(self, rule):
         try:
@@ -70,6 +77,8 @@ class AutoMod(Cog):
 
         elif action_to_take == "add_role":
             await message.channel.send("Would add role to user")
+            role = guild.get_role(await self.config.guild(guild).get_raw(rule.rule_name, "role_to_add"))
+            await maybe_add_role(author, role)
             log.info(f"{rule.rule_name} - Added Role (role) to {author} ({author.id})")
 
         elif action_to_take == "ban":
@@ -118,7 +127,7 @@ class AutoMod(Cog):
                 await self._take_action(rule, message)
 
     @group()
-    async def automod(self, ctx):
+    async def ruleset(self, ctx):
         """
         Base command for autmod settings.
 
@@ -127,7 +136,7 @@ class AutoMod(Cog):
         """
         pass
 
-    @automod.command()
+    @ruleset.command()
     async def enable(self, ctx, rule_name):
         """
         Toggles wallspam automodding
@@ -141,7 +150,7 @@ class AutoMod(Cog):
             f"**{rule_name.title()}** set from `{transform_bool(before)}` to `{transform_bool(after)}`"
         )
 
-    @automod.command()
+    @ruleset.command()
     async def action(self, ctx, rule_name):
         """
         Choose which action to take on an offensive wallspam message
@@ -170,7 +179,7 @@ class AutoMod(Cog):
         else:
             await ctx.send("Okay, nothing's changed.")
 
-    @automod.command()
+    @ruleset.command()
     async def delete(self, ctx, rule_name):
         """
         Toggles whether message should be deleted on offence
@@ -185,7 +194,7 @@ class AutoMod(Cog):
             f"Deleting messages set from `{transform_bool(before)}` to `{transform_bool(after)}`"
         )
 
-    @automod.command()
+    @ruleset.command()
     async def message(self, ctx, rule_name):
         """"
         Toggles whether to send a Private Message to the user.
@@ -196,7 +205,7 @@ class AutoMod(Cog):
         if not rule:
             return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
 
-    @automod.command()
+    @ruleset.command()
     async def whitelistrole(self, ctx, rule_name, role: discord.Role):
         rule = await self.is_a_rule(rule_name)
         if not rule:
@@ -212,7 +221,7 @@ class AutoMod(Cog):
                 await rule.remove_whitelist_role(ctx.guild, role)
         await ctx.send("Done")
 
-    @automod.command()
+    @ruleset.command()
     async def role(self, ctx, rule_name, role: discord.Role):
         """
         Set the role to add to offender
@@ -228,3 +237,7 @@ class AutoMod(Cog):
         await ctx.send(
             f"Role to add set from `{before}` to `{after}`"
         )
+
+
+
+
