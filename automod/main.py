@@ -14,7 +14,13 @@ from redbot.core import Config
 import logging
 from .constants import *
 
-from .utils import transform_bool, get_option_reaction, thumbs_up_success, yes_or_no, maybe_add_role
+from .utils import (
+    transform_bool,
+    get_option_reaction,
+    thumbs_up_success,
+    yes_or_no,
+    maybe_add_role,
+)
 
 from .rules.wallspam import WallSpamRule
 
@@ -32,8 +38,8 @@ class AutoMod(Cog, Settings):
         )
         self.wallspam = WallSpamRule(self.config)
         self.guild_defaults = {
-            "settings": { "announcement_channel": None, "is_announcement_enabled": True },
-            WallSpamRule.__class__.__name__: DEFAULT_OPTIONS
+            "settings": {"announcement_channel": None, "is_announcement_enabled": True},
+            WallSpamRule.__class__.__name__: DEFAULT_OPTIONS,
         }
         self.config.register_guild(**self.guild_defaults)
         self.rules_map = {"wallspam": self.wallspam}
@@ -77,7 +83,9 @@ class AutoMod(Cog, Settings):
 
         elif action_to_take == "add_role":
             await message.channel.send("Would add role to user")
-            role = guild.get_role(await self.config.guild(guild).get_raw(rule.rule_name, "role_to_add"))
+            role = guild.get_role(
+                await self.config.guild(guild).get_raw(rule.rule_name, "role_to_add")
+            )
             await maybe_add_role(author, role)
             log.info(f"{rule.rule_name} - Added Role (role) to {author} ({author.id})")
 
@@ -234,10 +242,4 @@ class AutoMod(Cog, Settings):
 
         before, after = await rule.set_mute_role(ctx.guild, role)
 
-        await ctx.send(
-            f"Role to add set from `{before}` to `{after}`"
-        )
-
-
-
-
+        await ctx.send(f"Role to add set from `{before}` to `{after}`")

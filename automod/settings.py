@@ -6,32 +6,42 @@ from .utils import transform_bool
 
 log = logging.getLogger(name="red.breadcogs.automod")
 
-class Settings:
 
-    async def set_announcement_channel(self, guild: discord.Guild, channel: discord.TextChannel) -> tuple:
+class Settings:
+    async def set_announcement_channel(
+        self, guild: discord.Guild, channel: discord.TextChannel
+    ) -> tuple:
         """Sets the channel where announcements should be sent"""
         before_channel = None
         try:
-            before = await self.config.guild(guild).get_raw("settings", "announcement_channel")
+            before = await self.config.guild(guild).get_raw(
+                "settings", "announcement_channel"
+            )
             before_channel = guild.get_channel(before)
         except KeyError:
             pass
 
-        await self.config.guild(guild).set_raw("settings", "announcement_channel", value=channel.id)
+        await self.config.guild(guild).set_raw(
+            "settings", "announcement_channel", value=channel.id
+        )
 
         return before_channel, channel
 
     async def toggle_announcements(self, guild: discord.Guild):
         before = None
         try:
-            before = await self.config.guild(guild).get_raw("settings", "is_announcement_enabled")
+            before = await self.config.guild(guild).get_raw(
+                "settings", "is_announcement_enabled"
+            )
         except KeyError:
             pass
 
         if before is None:
             before = True
 
-        await self.config.guild(guild).set_raw("settings", "is_announcement_enabled", value = not before)
+        await self.config.guild(guild).set_raw(
+            "settings", "is_announcement_enabled", value=not before
+        )
 
         return before, not before
 
@@ -47,8 +57,12 @@ class Settings:
         """
         before, after = await self.toggle_announcements(ctx.guild)
 
-        log.info(f"{ctx.author} ({ctx.author.id}) toggled announcements from {before} to {after}")
-        await ctx.send(f"`🔔` Announcements changed from `{transform_bool(before)}` to `{transform_bool(after)}`")
+        log.info(
+            f"{ctx.author} ({ctx.author.id}) toggled announcements from {before} to {after}"
+        )
+        await ctx.send(
+            f"`🔔` Announcements changed from `{transform_bool(before)}` to `{transform_bool(after)}`"
+        )
 
     @announce.command()
     async def channel(self, ctx, channel: discord.TextChannel):
