@@ -46,8 +46,12 @@ class Settings:
         return before, not before
 
     @commands.group()
-    async def announce(self, ctx):
+    async def automodset(self, ctx):
         """Change the announcement settings"""
+        pass
+
+    @automodset.group()
+    async def announce(self, ctx):
         pass
 
     @announce.command(name="enable")

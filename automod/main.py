@@ -99,6 +99,13 @@ class AutoMod(Cog, Settings):
             # except discord.errors.HTTPException:
             #     log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
 
+        should_announce = await self.config.guild(guild).get_raw("settings", "is_announcement_enabled")
+
+        if should_announce:
+            announce_embed = await rule.get_announcement_embed(message, action_to_take)
+            destination = guild.get_channel(await self.config.guild(guild).get_raw("settings", "announcement_channel"))
+            await destination.send(embed=announce_embed)
+
     @Cog.listener(name="on_automod_WallSpamRule")
     async def _do_stuff(self, author, message):
         print("did stuff")
@@ -147,8 +154,7 @@ class AutoMod(Cog, Settings):
     @ruleset.command()
     async def enable(self, ctx, rule_name):
         """
-        Toggles wallspam automodding
-
+        Toggles whether rule is active
         """
         rule = await self.is_a_rule(rule_name)
         if not rule:
@@ -161,7 +167,7 @@ class AutoMod(Cog, Settings):
     @ruleset.command()
     async def action(self, ctx, rule_name):
         """
-        Choose which action to take on an offensive wallspam message
+        Choose which action to take on an offensive message
 
        1) Nothing (still fires event for third-party integration)
        2) DM a role\n
@@ -204,7 +210,7 @@ class AutoMod(Cog, Settings):
 
     @ruleset.command()
     async def message(self, ctx, rule_name):
-        """"
+        """
         Toggles whether to send a Private Message to the user.
 
         This method will fail silently.
@@ -215,6 +221,7 @@ class AutoMod(Cog, Settings):
 
     @ruleset.command()
     async def whitelistrole(self, ctx, rule_name, role: discord.Role):
+        """Add a role to be ignored by automod actions"""
         rule = await self.is_a_rule(rule_name)
         if not rule:
             return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
