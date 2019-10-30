@@ -67,6 +67,14 @@ class BaseRule:
             self.rule_name, "action_to_take", value=action
         )
 
+    async def get_should_delete(self, guild: discord.Guild):
+        try:
+            return await self.config.guild(guild).get_raw(
+            self.rule_name, "delete_message"
+        )
+        except KeyError:
+            return True
+
     async def toggle_to_delete_message(self, guild: discord.Guild) -> (bool, bool):
         """Toggles whether offending message should be deleted"""
         try:

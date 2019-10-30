@@ -79,11 +79,21 @@ class AutoMod(Cog, Settings, BaseRuleCommands):
         _action_reason = f"[AutoMod] {rule.rule_name}"
 
         should_announce = await self.config.guild(guild).get_raw("settings", "is_announcement_enabled")
+        should_delete = await rule.get_should_delete(guild)
+
+        if should_delete:
+            try:
+                await message.delete()
+            except discord.errors.Forbidden:
+                log.warning("Missing permissions to delete message")
 
         if should_announce:
             announce_embed = await rule.get_announcement_embed(message, action_to_take)
-            destination = guild.get_channel(await self.config.guild(guild).get_raw("settings", "announcement_channel"))
-            await destination.send(embed=announce_embed)
+            try:
+                destination = guild.get_channel(await self.config.guild(guild).get_raw("settings", "announcement_channel"))
+                await destination.send(embed=announce_embed)
+            except KeyError:
+                pass
 
         if action_to_take == "third_party":
             return
@@ -200,8 +210,8 @@ class AutoMod(Cog, Settings, BaseRuleCommands):
         else:
             await ctx.send("Okay, nothing's changed.")
 
-    @ruleset.command()
-    async def delete(self, ctx, rule_name):
+    @ruleset.command(name="delete")
+    async def _delete_message(self, ctx, rule_name):
         """
         Toggles whether message should be deleted on offence
 
@@ -215,8 +225,8 @@ class AutoMod(Cog, Settings, BaseRuleCommands):
             f"Deleting messages set from `{transform_bool(before)}` to `{transform_bool(after)}`"
         )
 
-    @ruleset.command()
-    async def message(self, ctx, rule_name):
+    @ruleset.command(name="message")
+    async def _message(self, ctx, rule_name):
         """
         Toggles whether to send a Private Message to the user.
 
@@ -225,6 +235,8 @@ class AutoMod(Cog, Settings, BaseRuleCommands):
         rule = await self.is_a_rule(rule_name)
         if not rule:
             return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
+
+        return await ctx.send('This setting is a WIP')
 
     @ruleset.group()
     async def whitelistrole(self, ctx):
