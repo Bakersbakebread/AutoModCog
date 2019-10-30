@@ -50,8 +50,31 @@ class Settings:
         """Change the announcement settings"""
         pass
 
+    @automodset.command(name="maxmentions")
+    async def _set_mention_threshold(self, ctx, amount: int):
+        """Set the max amount of mentions allowed
+
+        This overrides the default number of 4 individual mentions on the Mention Spam rule
+        """
+        before = 4
+        try:
+            before = await self.config.guild(ctx.guild).get_raw("settings", "mention_threshold")
+        except KeyError:
+            pass
+
+        await self.config.guild(ctx.guild).set_raw("settings", "mention_threshold", value=amount)
+        log.info(
+            f"{ctx.author} ({ctx.author.id}) changed mention threshold from {before} to {amount}"
+        )
+        await ctx.send(
+            f"`🎯` Mention threshold changed from `{before}` to `{amount}`"
+        )
+
     @automodset.group()
     async def announce(self, ctx):
+        """
+        Message announcement settings
+        """
         pass
 
     @announce.command(name="enable")
@@ -77,6 +100,6 @@ class Settings:
         before, after = await self.set_announcement_channel(ctx.guild, channel)
 
         log.info(
-            f"{ctx.author} ({ctx.author.id}) changed announcement channel from {before} {before.id or ' '} to {after} {after.id}"
+            f"{ctx.author} ({ctx.author.id}) changed announcement channel from {before} to {after}"
         )
         await ctx.send(f"`🔔` Announcement channel changed from `{before}` to `{after}`")

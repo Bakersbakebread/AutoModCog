@@ -23,13 +23,15 @@ from .utils import (
 )
 
 from .rules.wallspam import WallSpamRule
+from .rules.mentionspam import MentionSpamRule
+from .rules.base import BaseRuleCommands
 
 from .constants import DEFAULT_OPTIONS
 
 log = logging.getLogger(name="red.breadcogs.automod")
 
 
-class AutoMod(Cog, Settings):
+class AutoMod(Cog, Settings, BaseRuleCommands):
     def __init__(self, bot, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.bot = bot
@@ -37,12 +39,14 @@ class AutoMod(Cog, Settings):
             self, identifier=78945698745687, force_registration=True
         )
         self.wallspam = WallSpamRule(self.config)
+        self.mentionspam = MentionSpamRule(self.config)
         self.guild_defaults = {
             "settings": {"announcement_channel": None, "is_announcement_enabled": True},
             WallSpamRule.__class__.__name__: DEFAULT_OPTIONS,
+            MentionSpamRule.__class__.__name__: DEFAULT_OPTIONS,
         }
         self.config.register_guild(**self.guild_defaults)
-        self.rules_map = {"wallspam": self.wallspam}
+        self.rules_map = {"wallspam": self.wallspam, "mentionspam": self.mentionspam}
         self.rules_string = "\n".join([key for key in self.rules_map])
 
     # TODO:
@@ -53,6 +57,13 @@ class AutoMod(Cog, Settings):
             return self.rules_map[rule]
         except:
             return None
+
+    @command()
+    async def tt(self,ctx):
+        rule = await self.is_a_rule("wallspam")
+        embed = await rule.get_settings_embed(ctx.guild)
+        await ctx.send(embed = embed)
+
 
     async def _take_action(self, rule, message: discord.Message):
         guild: discord.Guild = message.guild
@@ -67,14 +78,19 @@ class AutoMod(Cog, Settings):
 
         _action_reason = f"[AutoMod] {rule.rule_name}"
 
+        should_announce = await self.config.guild(guild).get_raw("settings", "is_announcement_enabled")
+
+        if should_announce:
+            announce_embed = await rule.get_announcement_embed(message, action_to_take)
+            destination = guild.get_channel(await self.config.guild(guild).get_raw("settings", "announcement_channel"))
+            await destination.send(embed=announce_embed)
+
         if action_to_take == "third_party":
-            await channel.send("Would do nothing (Third Party)")
             return
 
         elif action_to_take == "kick":
             try:
-                # await author.kick(reason=_action_reason)
-                await channel.send("would kick user")
+                await author.kick(reason=_action_reason)
                 log.info(f"{rule.rule_name} - Kicked {author} ({author.id})")
             except discord.errors.Forbidden:
                 log.warning(
@@ -82,7 +98,6 @@ class AutoMod(Cog, Settings):
                 )
 
         elif action_to_take == "add_role":
-            await message.channel.send("Would add role to user")
             role = guild.get_role(
                 await self.config.guild(guild).get_raw(rule.rule_name, "role_to_add")
             )
@@ -90,21 +105,13 @@ class AutoMod(Cog, Settings):
             log.info(f"{rule.rule_name} - Added Role (role) to {author} ({author.id})")
 
         elif action_to_take == "ban":
-            await channel.send("Would ban user")
-            # try:
-            #     await guild.ban(user = author, reason = _action_reason, delete_message_days=1)
-            #     log.info(f"{rule.rule_name} - Banned {author} ({author.id})")
-            # except discord.errors.Forbidden:
-            #     log.warning(f"{rule.rule_name} - Failed to ban user, missing permissions")
-            # except discord.errors.HTTPException:
-            #     log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
-
-        should_announce = await self.config.guild(guild).get_raw("settings", "is_announcement_enabled")
-
-        if should_announce:
-            announce_embed = await rule.get_announcement_embed(message, action_to_take)
-            destination = guild.get_channel(await self.config.guild(guild).get_raw("settings", "announcement_channel"))
-            await destination.send(embed=announce_embed)
+            try:
+                await guild.ban(user = author, reason = _action_reason, delete_message_days=1)
+                log.info(f"{rule.rule_name} - Banned {author} ({author.id})")
+            except discord.errors.Forbidden:
+                log.warning(f"{rule.rule_name} - Failed to ban user, missing permissions")
+            except discord.errors.HTTPException:
+                log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
 
     @Cog.listener(name="on_automod_WallSpamRule")
     async def _do_stuff(self, author, message):
@@ -159,7 +166,7 @@ class AutoMod(Cog, Settings):
         rule = await self.is_a_rule(rule_name)
         if not rule:
             return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
-        before, after = await rule_name.toggle_enabled(ctx.guild)
+        before, after = await rule.toggle_enabled(ctx.guild)
         await ctx.send(
             f"**{rule_name.title()}** set from `{transform_bool(before)}` to `{transform_bool(after)}`"
         )
@@ -219,8 +226,13 @@ class AutoMod(Cog, Settings):
         if not rule:
             return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
 
-    @ruleset.command()
-    async def whitelistrole(self, ctx, rule_name, role: discord.Role):
+    @ruleset.group()
+    async def whitelistrole(self, ctx):
+        """Adjust whitelisting roles"""
+        pass
+
+    @whitelistrole.command()
+    async def add(self, ctx, rule_name, *, role: discord.Role):
         """Add a role to be ignored by automod actions"""
         rule = await self.is_a_rule(rule_name)
         if not rule:
@@ -234,7 +246,34 @@ class AutoMod(Cog, Settings):
             )
             if result:
                 await rule.remove_whitelist_role(ctx.guild, role)
-        await ctx.send("Done")
+        await ctx.send(f"`{role}` added to the whitelist.")
+
+    @whitelistrole.command()
+    async def delete(self, ctx, rule_name, role: discord.Role):
+        """Delete a role from being ignored by automod actions"""
+        rule = await self.is_a_rule(rule_name)
+        if not rule:
+            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
+
+        try:
+            await rule.remove_whitelist_role(ctx.guild, role)
+        except ValueError:
+            return await ctx.send(f"`{role}` is not whitelisted.")
+
+    @whitelistrole.command()
+    async def show(self, ctx, rule_name):
+        """Show all whitelisted roles"""
+        rule = await self.is_a_rule(rule_name)
+        if not rule:
+            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
+
+        all_roles = await rule.get_all_whitelisted_roles(ctx.guild)
+        if len(all_roles):
+            desc = ", ".join("`{0}`".format(role) for role in all_roles)
+        else:
+            desc = "`❌` No roles currently whitelisted."
+        em = discord.Embed(title="Whitelisted roles", description=desc, color=discord.Color.greyple())
+        await ctx.send(embed=em)
 
     @ruleset.command()
     async def role(self, ctx, rule_name, role: discord.Role):

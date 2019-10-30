@@ -21,3 +21,15 @@ DEFAULT_OPTIONS = {
     "delete_message": True,
     "send_dm": True,
 }
+
+OPTIONS_MAP = {
+    "role_to_add": "Role to add",
+    "is_ignored": False,
+    "whitelist_channels": "Whitelisted channels",
+    "whitelist_roles": "Whitelisted roles",
+    "whitelist_users": "Whitelisted users",
+    "action_to_take": "Action to take",
+    "is_enabled": "Enabled",
+    "delete_message": "Delete message",
+    "send_dm": "DM User",
+}

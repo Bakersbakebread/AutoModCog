@@ -1,10 +1,22 @@
 import discord
 from redbot.core.config import Config
+from redbot.core import commands
 
 from datetime import datetime
 
-from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS
+from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS, OPTIONS_MAP
 
+class BaseRuleCommands:
+
+    @commands.command()
+    async def tessst(self, ctx):
+        """
+        Base command for autmod settings.
+
+        Available rules:
+        **Wallspam** - Detects large repetitive wallspam
+        """
+        pass
 
 class BaseRule:
     def __init__(self, config):
@@ -28,7 +40,7 @@ class BaseRule:
             before = await self.config.guild(guild).get_raw(
                 self.rule_name, "is_enabled"
             )
-            await self.config.set_raw(self.rule_name, value={"is_enabled": not before})
+            await self.config.guild(guild).set_raw(self.rule_name, value={"is_enabled": not before})
             return before, not before
         except KeyError:
             await self.config.guild(guild).set_raw(
@@ -57,9 +69,12 @@ class BaseRule:
 
     async def toggle_to_delete_message(self, guild: discord.Guild) -> (bool, bool):
         """Toggles whether offending message should be deleted"""
-        before = await self.config.guild(guild).get_raw(
+        try:
+            before = await self.config.guild(guild).get_raw(
             self.rule_name, "delete_message"
         )
+        except KeyError:
+            before = True
         await self.config.guild(guild).set_raw(
             self.rule_name, "delete_message", value=not before
         )
@@ -108,10 +123,20 @@ class BaseRule:
         roles = await self.config.guild(guild).get_raw(
             self.rule_name, "whitelist_roles"
         )
+        if not role.id in roles:
+            raise ValueError("That role is not whitelisted")
+
         roles.remove(role.id)
+
         await self.config.guild(guild).set_raw(
             self.rule_name, "whitelist_roles", value=roles
         )
+
+    async def get_all_whitelisted_roles(self, guild: discord.Guild):
+        roles = await self.config.guild(guild).get_raw(
+            self.rule_name, "whitelist_roles"
+        )
+        return roles
 
     async def toggle_sending_message(self, guild: discord.Guild) -> (bool, bool):
         try:
@@ -166,7 +191,17 @@ class BaseRule:
         embed.timestamp = datetime.now()
 
         if action_taken:
-            embed.add_field(name="Action Taken", value=f"`action_taken`")
+            embed.add_field(name="Action Taken", value=f"`{action_taken}`")
+
+        return embed
+
+    async def get_settings_embed(self, guild: discord.Guild):
+        """Returns a settings embed"""
+        is_enabled = await self.config.guild(guild).get_raw(self.rule_name)
+        desc = ""
+        for k, v in is_enabled.items():
+            desc += f"**{OPTIONS_MAP[k]}** - `{v}`\n"
+        embed = discord.Embed(title=f"{self.rule_name} settings", description=desc)
 
         return embed
 
