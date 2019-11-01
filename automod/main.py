@@ -219,7 +219,7 @@ def whitelistrole_show_wrapper(group, name, friendly_name):
         """Show all whitelisted roles"""
         rule = getattr(self, name)
         all_roles = await rule.get_all_whitelisted_roles(ctx.guild)
-        if len(all_roles):
+        if all_roles:
             desc = ", ".join("`{0}`".format(role) for role in all_roles)
         else:
             desc = "`❌` No roles currently whitelisted."
