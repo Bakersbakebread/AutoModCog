@@ -1,22 +1,8 @@
 import discord
-from redbot.core.config import Config
-from redbot.core import commands
 
 from datetime import datetime
 
 from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS, OPTIONS_MAP
-
-
-# class BaseCommands:
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args,**kwargs)
-#
-#     async def enable_rule(self, ctx):
-#         """
-#         Toggles whether rule is active
-#         """
-#         before, after = await self.toggle_enabled(guild=ctx.guild)
-#         await ctx.send(before)
 
 
 class BaseRule:
