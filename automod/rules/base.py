@@ -128,9 +128,13 @@ class BaseRule:
         )
 
     async def get_all_whitelisted_roles(self, guild: discord.Guild):
-        roles = await self.config.guild(guild).get_raw(
-            self.rule_name, "whitelist_roles"
-        )
+        try:
+            roles = await self.config.guild(guild).get_raw(
+                self.rule_name, "whitelist_roles"
+            )
+        except KeyError:
+            # no roles added
+            return None
         return roles
 
     async def toggle_sending_message(self, guild: discord.Guild) -> (bool, bool):
