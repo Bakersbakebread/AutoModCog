@@ -114,6 +114,7 @@ def enable_rule_wrapper(group, name, friendly_name):
 
     return enable_rule
 
+from redbot.core.utils.chat_formatting import pagify
 
 def action_to_take__wrapper(group, name, friendly_name):
     @group.command(name="action")
@@ -386,7 +387,7 @@ class AutoMod(Cog, Settings, GroupCommands):
             except discord.errors.HTTPException:
                 log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
 
-    @Cog.listener(name="on_message")
+    @Cog.listener(name="on_message_without_command")
     async def _listen_for_infractions(self, message: discord.Message):
         guild = message.guild
         author = message.author
