@@ -14,6 +14,7 @@ from redbot.core import commands
 #     async def _this_is_test(self, ctx):
 #         await ctx.send('test')
 
+
 class DiscordInviteRule(BaseRule):
     def __init__(self, config):
         super().__init__(config)

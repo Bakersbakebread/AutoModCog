@@ -27,6 +27,21 @@ class Settings:
 
         return before_channel, channel
 
+    async def announcements_enabled(self, guild: discord.Guild) -> tuple:
+        enabled = False
+        channel = None
+        try:
+            enabled = await self.config.guild(guild).get_raw(
+                "settings", "is_announcement_enabled"
+            )
+            channel = await self.config.guild(guild).get_raw(
+                "settings", "announcement_channel"
+            )
+        except KeyError:
+            pass
+
+        return enabled, channel
+
     async def toggle_announcements(self, guild: discord.Guild):
         before = None
         try:
@@ -49,26 +64,6 @@ class Settings:
     async def automodset(self, ctx):
         """Change the announcement settings"""
         pass
-
-    @automodset.command(name="maxmentions")
-    async def _set_mention_threshold(self, ctx, amount: int):
-        """Set the max amount of mentions allowed
-
-        This overrides the default number of 4 individual mentions on the Mention Spam rule
-        """
-        before = 4
-        try:
-            before = await self.config.guild(ctx.guild).get_raw("settings", "mention_threshold")
-        except KeyError:
-            pass
-
-        await self.config.guild(ctx.guild).set_raw("settings", "mention_threshold", value=amount)
-        log.info(
-            f"{ctx.author} ({ctx.author.id}) changed mention threshold from {before} to {amount}"
-        )
-        await ctx.send(
-            f"`🎯` Mention threshold changed from `{before}` to `{amount}`"
-        )
 
     @automodset.group()
     async def announce(self, ctx):

@@ -1,19 +1,15 @@
 import discord
-from functools import partial
-from redbot.core.commands import (
-    Cog,
-    command,
-    group,
-    check,
-    CheckFailure,
-    Converter,
-    BadArgument,
-)
-from .settings import Settings
-from redbot.core import Config
 import logging
+
+from redbot.core.commands import Cog
+from redbot.core import Config, commands
+
+from .rules.wallspam import WallSpamRule
+from .rules.mentionspam import MentionSpamRule
+
 from .constants import *
 
+from .settings import Settings
 from .utils import (
     transform_bool,
     get_option_reaction,
@@ -22,53 +18,245 @@ from .utils import (
     maybe_add_role,
 )
 
-from .rules.wallspam import WallSpamRule
-from .rules.mentionspam import MentionSpamRule
-from .rules.base import BaseRuleCommands
-
-from .constants import DEFAULT_OPTIONS
-
 log = logging.getLogger(name="red.breadcogs.automod")
 
+groups = {"mentionspamrule": "Mention spam", "wallspamrule": "Wall spam"}
 
-class AutoMod(Cog, Settings, BaseRuleCommands):
+# thanks Jackenmen#6607 <3
+
+
+class GroupCommands:
+    @commands.group()
+    async def mentionspamrule(self, ctx):
+        """Individual mentions spam settings"""
+        pass
+
+    # commands specific to mention spam rule
+
+    @mentionspamrule.command()
+    async def threshold(self, ctx, threshold: int):
+        """Set the max amount of individual mentions allowed
+
+        This overrides the default number of 4 individual mentions on the Mention Spam rule
+        """
+        before, after = await self.mentionspamrule.set_threshold(ctx, threshold)
+        await ctx.send(f"`🎯` Mention threshold changed from `{before}` to `{after}`")
+
+    @commands.group()
+    async def wallspamrule(self, ctx):
+        """Walls of text/emojis settings"""
+        pass
+
+    # commands specific to wall spam rule
+
+
+def enable_rule_wrapper(group, name, friendly_name):
+    @group.command(name="enable")
+    async def enable_rule(self, ctx):
+        rule = getattr(self, name)
+        before, after = await rule.toggle_enabled(ctx.guild)
+        await ctx.send(
+            f"**{friendly_name.title()}** set from `{transform_bool(before)}` to `{transform_bool(after)}`"
+        )
+
+    return enable_rule
+
+
+def action_to_take__wrapper(group, name, friendly_name):
+    @group.command(name="action")
+    async def action_to_take(self, ctx):
+        """
+        Choose which action to take on an offensive message
+
+       1) Nothing (still fires event for third-party integration)
+       2) DM a role\n
+       3) Add a role to offender (Mute role for example)
+       4) Kick offender
+       5) Ban offender
+        """
+        rule = getattr(self, name)
+        embed = discord.Embed(
+            title="What action should be taken against wallspam?",
+            description=f":one: Nothing (still fires event for third-party integration)\n"
+            f":two: DM a role\n"
+            f":three: Add a role to offender (Mute role for example)\n"
+            f":four: Kick offender\n"
+            f":five: Ban offender",
+        )
+        action = await get_option_reaction(ctx, embed=embed)
+        if action:
+            await ctx.send(await thumbs_up_success(ACTION_CONFIRMATION[action]))
+            await rule.set_action_to_take(action, ctx.guild)
+        else:
+            await ctx.send("Okay, nothing's changed.")
+
+    return action_to_take
+
+
+def delete_message_wrapper(group, name, friendly_name):
+    @group.command(name="delete")
+    async def delete_message(self, ctx):
+        """
+        Toggles whether message should be deleted on offence
+
+        `manage_messages` perms are needed for this to run.
+        """
+        rule = getattr(self, name)
+        before, after = await rule.toggle_to_delete_message(ctx.guild)
+        await ctx.send(
+            f"Deleting messages set from `{transform_bool(before)}` to `{transform_bool(after)}`"
+        )
+
+    return delete_message
+
+
+def private_message_wrapper(group, name, friendly_name):
+    @group.command(name="message")
+    async def private_message(self, ctx):
+        """
+        Toggles whether to send a Private Message to the user.
+
+        This method will fail silently.
+        """
+        rule = getattr(self, name)
+        return await ctx.send("This setting is a WIP")
+
+    return private_message
+
+
+def whitelist_wrapper(group, name, friendly_name):
+    @group.command(name="whitelistrole")
+    async def whitelistrole(self, ctx, role: discord.Role):
+        """
+        Add a role to be ignored by automod actions"
+
+        Passing a role already whitelisted will prompt for deletion
+        """
+        rule = getattr(self, name)
+        try:
+            await rule.append_whitelist_role(ctx.guild, role)
+        except ValueError:
+            await ctx.send(f"`{role}` is already whitelisted.", delete_after=30)
+            result = await yes_or_no(
+                ctx, f"Would you like to remove `{role}` from the whitelist?"
+            )
+            if result:
+                await rule.remove_whitelist_role(ctx.guild, role)
+        await ctx.send(f"`{role}` added to the whitelist.")
+
+    return whitelistrole
+
+
+def whitelistrole_delete_wrapper(group, name, friendly_name):
+    @group.command(name="delwhitelistrole")
+    async def whitelistrole_delete(self, ctx, role: discord.Role):
+        """Delete a role from being ignored by automod actions"""
+        rule = getattr(self, name)
+        try:
+            await rule.remove_whitelist_role(ctx.guild, role)
+        except ValueError:
+            return await ctx.send(f"`{role}` is not whitelisted.")
+
+    return whitelistrole_delete
+
+
+def whitelistrole_show_wrapper(group, name, friendly_name):
+    @group.command(name="whitelistroleshow")
+    async def whitelistrole_show(self, ctx):
+        """Show all whitelisted roles"""
+        rule = getattr(self, name)
+        all_roles = await rule.get_all_whitelisted_roles(ctx.guild)
+        if len(all_roles):
+            desc = ", ".join("`{0}`".format(role) for role in all_roles)
+        else:
+            desc = "`❌` No roles currently whitelisted."
+        # TODO : Pagify
+        em = discord.Embed(
+            title="Whitelisted roles", description=desc, color=discord.Color.greyple()
+        )
+        await ctx.send(embed=em)
+
+    return whitelistrole_show
+
+
+def add_role_wrapper(group, name, friendly_name):
+    @group.command(name="role")
+    async def add_role(self, ctx, rule_name, role: discord.Role):
+        """
+        Set the role to add to offender
+
+        When a rule offence is found and action to take is set to "Add Role", this role is the one that will be added.
+        """
+        rule = getattr(self, name)
+        before, after = await rule.set_mute_role(ctx.guild, role)
+
+        await ctx.send(f"Role to add set from `{before}` to `{after}`")
+
+    return add_role
+
+
+for name, friendly_name in groups.items():
+    group = getattr(GroupCommands, name)
+
+    enable_rule = enable_rule_wrapper(group, name, friendly_name)
+    enable_rule.__name__ = f"enable_{name}"
+    setattr(GroupCommands, f"enable_{name}", enable_rule)
+
+    action_to_take = action_to_take__wrapper(group, name, friendly_name)
+    action_to_take.__name__ = f"action_{name}"
+    setattr(GroupCommands, f"action_{name}", action_to_take)
+
+    delete_message = delete_message_wrapper(group, name, friendly_name)
+    delete_message.__name__ = f"delete_{name}"
+    setattr(GroupCommands, f"delete_{name}", delete_message)
+
+    private_message = private_message_wrapper(group, name, friendly_name)
+    private_message.__name__ = f"private_message_{name}"
+    setattr(GroupCommands, f"private_message_{name}", private_message)
+
+    whitelistrole = whitelist_wrapper(group, name, friendly_name)
+    whitelistrole.__name__ = f"whitelistrole_{name}"
+    setattr(GroupCommands, f"whitelistrole_{name}", whitelistrole)
+
+    whitelistrole_delete = whitelistrole_delete_wrapper(group, name, friendly_name)
+    whitelistrole_delete.__name__ = f"whitelistrole_delete_{name}"
+    setattr(GroupCommands, f"whitelistrole_delete_{name}", whitelistrole_delete)
+
+    whitelistrole_show = whitelistrole_show_wrapper(group, name, friendly_name)
+    whitelistrole_show.__name__ = f"whitelistrole_show_{name}"
+    setattr(GroupCommands, f"whitelistrole_show_{name}", whitelistrole_show)
+
+    add_role = add_role_wrapper(group, name, friendly_name)
+    add_role.__name__ = f"add_role_{name}"
+    setattr(GroupCommands, f"add_role_{name}", add_role)
+
+
+class AutoMod(Cog, Settings, GroupCommands):
     def __init__(self, bot, *args, **kwargs):
+
         super().__init__(*args, **kwargs)
         self.bot = bot
         self.config = Config.get_conf(
             self, identifier=78945698745687, force_registration=True
         )
-        self.wallspam = WallSpamRule(self.config)
-        self.mentionspam = MentionSpamRule(self.config)
+        self.wallspamrule = WallSpamRule(self.config)
+        self.mentionspamrule = MentionSpamRule(self.config)
         self.guild_defaults = {
             "settings": {"announcement_channel": None, "is_announcement_enabled": True},
             WallSpamRule.__class__.__name__: DEFAULT_OPTIONS,
             MentionSpamRule.__class__.__name__: DEFAULT_OPTIONS,
         }
         self.config.register_guild(**self.guild_defaults)
-        self.rules_map = {"wallspam": self.wallspam, "mentionspam": self.mentionspam}
-        self.rules_string = "\n".join([key for key in self.rules_map])
-
-    # TODO:
-    # Add checks
-
-    async def is_a_rule(self, rule):
-        try:
-            return self.rules_map[rule]
-        except:
-            return None
-
-    @command()
-    async def tt(self,ctx):
-        rule = await self.is_a_rule("wallspam")
-        embed = await rule.get_settings_embed(ctx.guild)
-        await ctx.send(embed = embed)
-
+        self.rules_map = {
+            "wallspam": self.wallspamrule,
+            "mentionspam": self.mentionspamrule,
+        }
 
     async def _take_action(self, rule, message: discord.Message):
         guild: discord.Guild = message.guild
         author: discord.Member = message.author
         channel: discord.TextChannel = message.channel
+        global_settings = Settings()
 
         action_to_take = await rule.get_action_to_take(guild)
         self.bot.dispatch(f"automod_{rule.rule_name}", author, message)
@@ -78,7 +266,9 @@ class AutoMod(Cog, Settings, BaseRuleCommands):
 
         _action_reason = f"[AutoMod] {rule.rule_name}"
 
-        should_announce = await self.config.guild(guild).get_raw("settings", "is_announcement_enabled")
+        should_announce, announce_channel = await global_settings.announcements_enabled(
+            guild=guild
+        )
         should_delete = await rule.get_should_delete(guild)
 
         if should_delete:
@@ -88,14 +278,15 @@ class AutoMod(Cog, Settings, BaseRuleCommands):
                 log.warning("Missing permissions to delete message")
 
         if should_announce:
-            announce_embed = await rule.get_announcement_embed(message, action_to_take)
-            try:
-                destination = guild.get_channel(await self.config.guild(guild).get_raw("settings", "announcement_channel"))
-                await destination.send(embed=announce_embed)
-            except KeyError:
-                pass
+            if announce_channel is not None:
+                announce_embed = await rule.get_announcement_embed(
+                    message, action_to_take
+                )
+                announce_channel.send(embed=announce_embed)
 
         if action_to_take == "third_party":
+            # do nothing but we still fire the event
+            # so other devs can hook onto custom mod cogs for example
             return
 
         elif action_to_take == "kick":
@@ -108,26 +299,33 @@ class AutoMod(Cog, Settings, BaseRuleCommands):
                 )
 
         elif action_to_take == "add_role":
-            role = guild.get_role(
-                await self.config.guild(guild).get_raw(rule.rule_name, "role_to_add")
-            )
-            await maybe_add_role(author, role)
-            log.info(f"{rule.rule_name} - Added Role (role) to {author} ({author.id})")
+            try:
+                role = guild.get_role(
+                    await self.config.guild(guild).get_raw(
+                        rule.rule_name, "role_to_add"
+                    )
+                )
+                await maybe_add_role(author, role)
+                log.info(
+                    f"{rule.rule_name} - Added Role (role) to {author} ({author.id})"
+                )
+            except KeyError:
+                # role to add not set
+                log.info(f"{rule.rule_name} No role set to add to offending user")
+                pass
 
         elif action_to_take == "ban":
             try:
-                await guild.ban(user = author, reason = _action_reason, delete_message_days=1)
+                await guild.ban(
+                    user=author, reason=_action_reason, delete_message_days=1
+                )
                 log.info(f"{rule.rule_name} - Banned {author} ({author.id})")
             except discord.errors.Forbidden:
-                log.warning(f"{rule.rule_name} - Failed to ban user, missing permissions")
+                log.warning(
+                    f"{rule.rule_name} - Failed to ban user, missing permissions"
+                )
             except discord.errors.HTTPException:
                 log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
-
-    @Cog.listener(name="on_automod_WallSpamRule")
-    async def _do_stuff(self, author, message):
-        print("did stuff")
-        print(author)
-        print(message)
 
     @Cog.listener(name="on_message")
     async def _listen_for_infractions(self, message: discord.Message):
@@ -157,147 +355,3 @@ class AutoMod(Cog, Settings, BaseRuleCommands):
 
             if await rule.is_offensive(message):
                 await self._take_action(rule, message)
-
-    @group()
-    async def ruleset(self, ctx):
-        """
-        Base command for autmod settings.
-
-        Available rules:
-        **Wallspam** - Detects large repetitive wallspam
-        """
-        pass
-
-    @ruleset.command()
-    async def enable(self, ctx, rule_name):
-        """
-        Toggles whether rule is active
-        """
-        rule = await self.is_a_rule(rule_name)
-        if not rule:
-            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
-        before, after = await rule.toggle_enabled(ctx.guild)
-        await ctx.send(
-            f"**{rule_name.title()}** set from `{transform_bool(before)}` to `{transform_bool(after)}`"
-        )
-
-    @ruleset.command()
-    async def action(self, ctx, rule_name):
-        """
-        Choose which action to take on an offensive message
-
-       1) Nothing (still fires event for third-party integration)
-       2) DM a role\n
-       3) Add a role to offender (Mute role for example)
-       4) Kick offender
-       5) Ban offender
-        """
-        rule = await self.is_a_rule(rule_name)
-        if not rule:
-            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
-        embed = discord.Embed(
-            title="What action should be taken against wallspam?",
-            description=f":one: Nothing (still fires event for third-party integration)\n"
-            f":two: DM a role\n"
-            f":three: Add a role to offender (Mute role for example)\n"
-            f":four: Kick offender\n"
-            f":five: Ban offender",
-        )
-        action = await get_option_reaction(ctx, embed=embed)
-        if action:
-            await ctx.send(await thumbs_up_success(ACTION_CONFIRMATION[action]))
-            await rule.set_action_to_take(action, ctx.guild)
-        else:
-            await ctx.send("Okay, nothing's changed.")
-
-    @ruleset.command(name="delete")
-    async def _delete_message(self, ctx, rule_name):
-        """
-        Toggles whether message should be deleted on offence
-
-        `manage_messages` perms are needed for this to run.
-        """
-        rule = await self.is_a_rule(rule_name)
-        if not rule:
-            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
-        before, after = await rule.toggle_to_delete_message(ctx.guild)
-        await ctx.send(
-            f"Deleting messages set from `{transform_bool(before)}` to `{transform_bool(after)}`"
-        )
-
-    @ruleset.command(name="message")
-    async def _message(self, ctx, rule_name):
-        """
-        Toggles whether to send a Private Message to the user.
-
-        This method will fail silently.
-        """
-        rule = await self.is_a_rule(rule_name)
-        if not rule:
-            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
-
-        return await ctx.send('This setting is a WIP')
-
-    @ruleset.group()
-    async def whitelistrole(self, ctx):
-        """Adjust whitelisting roles"""
-        pass
-
-    @whitelistrole.command()
-    async def add(self, ctx, rule_name, *, role: discord.Role):
-        """Add a role to be ignored by automod actions"""
-        rule = await self.is_a_rule(rule_name)
-        if not rule:
-            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
-        try:
-            await rule.append_whitelist_role(ctx.guild, role)
-        except ValueError:
-            await ctx.send(f"`{role}` is already whitelisted.", delete_after=30)
-            result = await yes_or_no(
-                ctx, f"Would you like to remove `{role}` from the whitelist?"
-            )
-            if result:
-                await rule.remove_whitelist_role(ctx.guild, role)
-        await ctx.send(f"`{role}` added to the whitelist.")
-
-    @whitelistrole.command()
-    async def delete(self, ctx, rule_name, role: discord.Role):
-        """Delete a role from being ignored by automod actions"""
-        rule = await self.is_a_rule(rule_name)
-        if not rule:
-            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
-
-        try:
-            await rule.remove_whitelist_role(ctx.guild, role)
-        except ValueError:
-            return await ctx.send(f"`{role}` is not whitelisted.")
-
-    @whitelistrole.command()
-    async def show(self, ctx, rule_name):
-        """Show all whitelisted roles"""
-        rule = await self.is_a_rule(rule_name)
-        if not rule:
-            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
-
-        all_roles = await rule.get_all_whitelisted_roles(ctx.guild)
-        if len(all_roles):
-            desc = ", ".join("`{0}`".format(role) for role in all_roles)
-        else:
-            desc = "`❌` No roles currently whitelisted."
-        em = discord.Embed(title="Whitelisted roles", description=desc, color=discord.Color.greyple())
-        await ctx.send(embed=em)
-
-    @ruleset.command()
-    async def role(self, ctx, rule_name, role: discord.Role):
-        """
-        Set the role to add to offender
-
-        When a rule offence is found and action to take is set to "Add Role", this role is the one that will be added.
-        """
-        rule = await self.is_a_rule(rule_name)
-        if not rule:
-            return await ctx.send(ERROR_MESSAGES["invalid_rule"].format(rule_name))
-
-        before, after = await rule.set_mute_role(ctx.guild, role)
-
-        await ctx.send(f"Role to add set from `{before}` to `{after}`")

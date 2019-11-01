@@ -3,15 +3,10 @@ from .base import BaseRule
 
 from ..utils import *
 
-
 from redbot.core import commands
 
 
 class WallSpamRule(BaseRule):
-    def __init__(self, config):
-        super().__init__(config)
-        self.name = "wallspam"
-
     async def is_offensive(self, message):
         try:
             message_split = message.content.split()

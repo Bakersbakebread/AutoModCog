@@ -6,25 +6,24 @@ from datetime import datetime
 
 from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS, OPTIONS_MAP
 
-class BaseRuleCommands:
 
-    @commands.command()
-    async def tessst(self, ctx):
-        """
-        Base command for autmod settings.
+# class BaseCommands:
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args,**kwargs)
+#
+#     async def enable_rule(self, ctx):
+#         """
+#         Toggles whether rule is active
+#         """
+#         before, after = await self.toggle_enabled(guild=ctx.guild)
+#         await ctx.send(before)
 
-        Available rules:
-        **Wallspam** - Detects large repetitive wallspam
-        """
-        pass
 
 class BaseRule:
-    def __init__(self, config):
+    def __init__(self, config, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.config = config
-        self.rule_name = type(self).__name__
-
-    async def print_class_name(self):
-        print(type(self).__name__)
+        self.rule_name = self.__class__.__name__
 
     # enabling
     async def is_enabled(self, guild: discord.Guild) -> bool or None:
@@ -40,7 +39,9 @@ class BaseRule:
             before = await self.config.guild(guild).get_raw(
                 self.rule_name, "is_enabled"
             )
-            await self.config.guild(guild).set_raw(self.rule_name, value={"is_enabled": not before})
+            await self.config.guild(guild).set_raw(
+                self.rule_name, value={"is_enabled": not before}
+            )
             return before, not before
         except KeyError:
             await self.config.guild(guild).set_raw(
@@ -70,8 +71,8 @@ class BaseRule:
     async def get_should_delete(self, guild: discord.Guild):
         try:
             return await self.config.guild(guild).get_raw(
-            self.rule_name, "delete_message"
-        )
+                self.rule_name, "delete_message"
+            )
         except KeyError:
             return True
 
@@ -79,8 +80,8 @@ class BaseRule:
         """Toggles whether offending message should be deleted"""
         try:
             before = await self.config.guild(guild).get_raw(
-            self.rule_name, "delete_message"
-        )
+                self.rule_name, "delete_message"
+            )
         except KeyError:
             before = True
         await self.config.guild(guild).set_raw(
@@ -184,7 +185,9 @@ class BaseRule:
 
         return before_role, after_role
 
-    async def get_announcement_embed(self, message: discord.Message, action_taken=None) -> discord.Embed:
+    async def get_announcement_embed(
+        self, message: discord.Message, action_taken=None
+    ) -> discord.Embed:
         shortened_message_content = (
             (message.content[:120] + " .... (shortened)")
             if len(message.content.split()) > 25
@@ -193,7 +196,7 @@ class BaseRule:
         embed = discord.Embed(
             title=f"{self.rule_name} - Offense found",
             description=f"`{shortened_message_content}`",
-            color=discord.Color.gold()
+            color=discord.Color.gold(),
         )
         embed.set_author(name=f"{message.author} - {message.author.id}")
         embed.timestamp = datetime.now()
@@ -212,4 +215,3 @@ class BaseRule:
         embed = discord.Embed(title=f"{self.rule_name} settings", description=desc)
 
         return embed
-
