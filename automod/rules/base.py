@@ -187,6 +187,11 @@ class BaseRule:
         embed.set_author(name=f"{message.author} - {message.author.id}")
         embed.timestamp = datetime.now()
 
+        embed.add_field(
+            name="Jump to message",
+            value=f"[Click here to jump to message]({message.jump_url})",
+        )
+
         if action_taken:
             embed.add_field(name="Action Taken", value=f"`{action_taken}`")
 

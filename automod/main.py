@@ -6,6 +6,7 @@ from redbot.core import Config, commands
 
 from .rules.wallspam import WallSpamRule
 from .rules.mentionspam import MentionSpamRule
+from .rules.discordinvites import DiscordInviteRule
 
 from .constants import *
 
@@ -20,18 +21,21 @@ from .utils import (
 
 log = logging.getLogger(name="red.breadcogs.automod")
 
-groups = {"mentionspamrule": "Mention spam", "wallspamrule": "Wall spam"}
+groups = {
+    "mentionspamrule": "Mention spam",
+    "wallspamrule": "Wall spam",
+    "inviterule": "Discord invites",
+}
 
 # thanks Jackenmen#6607 <3
 
 
 class GroupCommands:
+    # commands specific to mention spam rule
     @commands.group()
     async def mentionspamrule(self, ctx):
         """Individual mentions spam settings"""
         pass
-
-    # commands specific to mention spam rule
 
     @mentionspamrule.command()
     async def threshold(self, ctx, threshold: int):
@@ -42,12 +46,61 @@ class GroupCommands:
         before, after = await self.mentionspamrule.set_threshold(ctx, threshold)
         await ctx.send(f"`🎯` Mention threshold changed from `{before}` to `{after}`")
 
+    # commands specific to wall spam rule
     @commands.group()
     async def wallspamrule(self, ctx):
         """Walls of text/emojis settings"""
         pass
 
-    # commands specific to wall spam rule
+    # commands specific to discord invite rule
+    @commands.group()
+    async def inviterule(self, ctx):
+        """Filters discord invites"""
+        pass
+
+    @inviterule.command()
+    async def addlink(self, ctx, link: str):
+        """
+        Add a link to not be filtered.
+
+        This must be the full link, supported types:
+
+        discord.gg/inviteCode
+        discordapp.com/invite/inviteCode
+        """
+        try:
+            await self.inviterule.add_allowed_link(ctx.guild, link)
+        except ValueError:
+            return await ctx.send("`👆` That link already exists.")
+
+        return await ctx.send(f"`👍` Added `{link}` to the allowed links list.")
+
+    @inviterule.command()
+    async def dellink(self, ctx, link: str):
+        """
+        Deletes a link from the ignore list
+
+        This must be the full exact match of a link in the list.
+        """
+        try:
+            await self.inviterule.delete_allowed_link(ctx.guild, link)
+        except ValueError as e:
+            await ctx.send(f"`❌` {e.args[0]}")
+
+    @inviterule.command()
+    async def showlinks(self, ctx):
+        """
+        Show a list of links that are not filtered.
+        """
+        allowed_links = await self.inviterule.get_allowed_links(ctx.guild)
+        if allowed_links is not None:
+            embed = discord.Embed(
+                title="Links that are not filtered by the rule",
+                description=", ".join("`{0}`".format(w) for w in allowed_links),
+            )
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send(f"`❌` No links currently allowed.")
 
 
 def enable_rule_wrapper(group, name, friendly_name):
@@ -239,24 +292,29 @@ class AutoMod(Cog, Settings, GroupCommands):
         self.config = Config.get_conf(
             self, identifier=78945698745687, force_registration=True
         )
+        # rules
         self.wallspamrule = WallSpamRule(self.config)
         self.mentionspamrule = MentionSpamRule(self.config)
+        self.inviterule = DiscordInviteRule(self.config)
+
         self.guild_defaults = {
             "settings": {"announcement_channel": None, "is_announcement_enabled": True},
             WallSpamRule.__class__.__name__: DEFAULT_OPTIONS,
             MentionSpamRule.__class__.__name__: DEFAULT_OPTIONS,
+            DiscordInviteRule.__class__.__name__: DEFAULT_OPTIONS,
         }
+
         self.config.register_guild(**self.guild_defaults)
         self.rules_map = {
             "wallspam": self.wallspamrule,
             "mentionspam": self.mentionspamrule,
+            "inviterule": self.inviterule,
         }
 
     async def _take_action(self, rule, message: discord.Message):
         guild: discord.Guild = message.guild
         author: discord.Member = message.author
         channel: discord.TextChannel = message.channel
-        global_settings = Settings()
 
         action_to_take = await rule.get_action_to_take(guild)
         self.bot.dispatch(f"automod_{rule.rule_name}", author, message)
@@ -266,7 +324,7 @@ class AutoMod(Cog, Settings, GroupCommands):
 
         _action_reason = f"[AutoMod] {rule.rule_name}"
 
-        should_announce, announce_channel = await global_settings.announcements_enabled(
+        should_announce, announce_channel = await self.announcements_enabled(
             guild=guild
         )
         should_delete = await rule.get_should_delete(guild)
@@ -282,7 +340,8 @@ class AutoMod(Cog, Settings, GroupCommands):
                 announce_embed = await rule.get_announcement_embed(
                     message, action_to_take
                 )
-                announce_channel.send(embed=announce_embed)
+                announce_channel_obj = guild.get_channel(announce_channel)
+                await announce_channel_obj.send(embed=announce_embed)
 
         if action_to_take == "third_party":
             # do nothing but we still fire the event
