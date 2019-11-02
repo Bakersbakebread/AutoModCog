@@ -11,9 +11,8 @@ log = logging.getLogger("red.breadcogs.automod")
 
 
 class MentionSpamRule(BaseRule):
-    def __init__(self, config, bot):
+    def __init__(self, config):
         super().__init__(config)
-        self.bot = bot
         self.name = "mentionspam"
 
     async def is_offensive(self, message: discord.Message):

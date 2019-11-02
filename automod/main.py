@@ -334,7 +334,7 @@ class AutoMod(Cog, Settings, GroupCommands):
         )
         # rules
         self.wallspamrule = WallSpamRule(self.config)
-        self.mentionspamrule = MentionSpamRule(self.config, self.bot)
+        self.mentionspamrule = MentionSpamRule(self.config)
         self.inviterule = DiscordInviteRule(self.config)
 
         self.guild_defaults = {
