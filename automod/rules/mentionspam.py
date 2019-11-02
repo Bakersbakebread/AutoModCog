@@ -5,17 +5,20 @@ from ..utils import *
 
 from redbot.core import commands
 import logging
+import re
 
 log = logging.getLogger("red.breadcogs.automod")
 
 
 class MentionSpamRule(BaseRule):
-    def __init__(self, config):
+    def __init__(self, config, bot):
         super().__init__(config)
+        self.bot = bot
         self.name = "mentionspam"
 
     async def is_offensive(self, message: discord.Message):
         author = message.author
+        content = message.content.split()
 
         try:
             mention_threshold = await self.config.guild(message.guild).get_raw(
@@ -24,7 +27,11 @@ class MentionSpamRule(BaseRule):
         except KeyError:
             mention_threshold = 4
 
-        mention_count = sum(not m.bot and m.id != author.id for m in message.mentions)
+        mention = re.compile(r"<@!?(\d+)>")
+        allowed_mentions = [author.mention]
+        filter_content = [x for x in content if x not in allowed_mentions]
+
+        mention_count = len(list(filter(mention.match, filter_content)))
 
         if mention_count >= mention_threshold:
             return True

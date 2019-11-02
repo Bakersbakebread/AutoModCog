@@ -130,6 +130,7 @@ def enable_rule_wrapper(group, name, friendly_name):
 
     return enable_rule
 
+
 def action_to_take__wrapper(group, name, friendly_name):
     @group.command(name="action")
     async def action_to_take(self, ctx):
@@ -249,7 +250,9 @@ def whitelistrole_show_wrapper(group, name, friendly_name):
         if all_roles:
             desc = ", ".join("`{0}`".format(role) for role in all_roles)
             em = discord.Embed(
-                title="Whitelisted roles", description=desc, color=discord.Color.greyple()
+                title="Whitelisted roles",
+                description=desc,
+                color=discord.Color.greyple(),
             )
             await ctx.send(embed=em)
         else:
@@ -299,8 +302,10 @@ for name, friendly_name in groups.items():
     whitelistrole.__name__ = f"whitelistrole_{name}"
     setattr(GroupCommands, f"whitelistrole_{name}", whitelistrole)
 
-    #whitelist group
-    whitelistrole_delete = whitelistrole_delete_wrapper(whitelistrole, name, friendly_name)
+    # whitelist group
+    whitelistrole_delete = whitelistrole_delete_wrapper(
+        whitelistrole, name, friendly_name
+    )
     whitelistrole_delete.__name__ = f"whitelistrole_delete_{name}"
     setattr(GroupCommands, f"whitelistrole_delete_{name}", whitelistrole_delete)
 
@@ -329,7 +334,7 @@ class AutoMod(Cog, Settings, GroupCommands):
         )
         # rules
         self.wallspamrule = WallSpamRule(self.config)
-        self.mentionspamrule = MentionSpamRule(self.config)
+        self.mentionspamrule = MentionSpamRule(self.config, self.bot)
         self.inviterule = DiscordInviteRule(self.config)
 
         self.guild_defaults = {
@@ -439,13 +444,14 @@ class AutoMod(Cog, Settings, GroupCommands):
             return
 
         for rule_name, rule in self.rules_map.items():
-            if not await rule.is_enabled(guild):
-                return
-            # check all if roles - if any are immune, then that's okay, we'll let them spam :)
-            is_whitelisted_role = await rule.role_is_whitelisted(guild, author.roles)
-            if is_whitelisted_role:
-                # user is whitelisted, let's stop here
-                return
+            if await rule.is_enabled(guild):
+                # check all if roles - if any are immune, then that's okay, we'll let them spam :)
+                is_whitelisted_role = await rule.role_is_whitelisted(
+                    guild, author.roles
+                )
+                if is_whitelisted_role:
+                    # user is whitelisted, let's stop here
+                    return
 
-            if await rule.is_offensive(message):
-                await self._take_action(rule, message)
+                if await rule.is_offensive(message):
+                    await self._take_action(rule, message)
