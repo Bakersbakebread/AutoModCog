@@ -55,11 +55,23 @@ class GroupCommands:
     # commands specific to discord invite rule
     @commands.group()
     async def inviterule(self, ctx):
-        """Filters discord invites"""
+        """Filters discord invites
+
+        Supported type of discord links:
+        `discord.gg/inviteCode`
+        `discordapp.com/invite/inviteCode`
+        """
         pass
 
-    @inviterule.command()
-    async def addlink(self, ctx, link: str):
+    @inviterule.group()
+    async def whitelistlink(self, ctx):
+        """Add/remove/show links allowed
+
+        Adding a link to the whitelist will allow it to be immune from automod actions"""
+        pass
+
+    @whitelistlink.command(name="add")
+    async def add_link(self, ctx, link: str):
         """
         Add a link to not be filtered.
 
@@ -75,8 +87,8 @@ class GroupCommands:
 
         return await ctx.send(f"`👍` Added `{link}` to the allowed links list.")
 
-    @inviterule.command()
-    async def dellink(self, ctx, link: str):
+    @whitelistlink.command(name="delete")
+    async def delete_link(self, ctx, link: str):
         """
         Deletes a link from the ignore list
 
@@ -87,8 +99,8 @@ class GroupCommands:
         except ValueError as e:
             await ctx.send(f"`❌` {e.args[0]}")
 
-    @inviterule.command()
-    async def showlinks(self, ctx):
+    @whitelistlink.command(name="show")
+    async def show_links(self, ctx):
         """
         Show a list of links that are not filtered.
         """
@@ -104,8 +116,12 @@ class GroupCommands:
 
 
 def enable_rule_wrapper(group, name, friendly_name):
-    @group.command(name="enable")
+    @group.command(name="toggle")
     async def enable_rule(self, ctx):
+        """
+        Toggle enabling/disabling this rule
+
+        """
         rule = getattr(self, name)
         before, after = await rule.toggle_enabled(ctx.guild)
         await ctx.send(
@@ -113,8 +129,6 @@ def enable_rule_wrapper(group, name, friendly_name):
         )
 
     return enable_rule
-
-from redbot.core.utils.chat_formatting import pagify
 
 def action_to_take__wrapper(group, name, friendly_name):
     @group.command(name="action")
@@ -179,13 +193,25 @@ def private_message_wrapper(group, name, friendly_name):
 
 
 def whitelist_wrapper(group, name, friendly_name):
-    @group.command(name="whitelistrole")
-    async def whitelistrole(self, ctx, role: discord.Role):
-        """
-        Add a role to be ignored by automod actions"
+    @group.group(name="whitelistrole")
+    async def whitelistrole(self, ctx):
+        """Whitelisting roles settings
 
-        Passing a role already whitelisted will prompt for deletion
+        Adding a role to the whitelist means that this role will be immune to automod actions
         """
+        pass
+
+    return whitelistrole
+
+
+def whitelistrole_add_wrapper(group, name, friendly_name):
+    @group.command(name="add")
+    async def whitelistrole_add(self, ctx, role: discord.Role):
+        """
+                Add a role to be ignored by automod actions"
+
+                Passing a role already whitelisted will prompt for deletion
+                """
         rule = getattr(self, name)
         try:
             await rule.append_whitelist_role(ctx.guild, role)
@@ -198,11 +224,11 @@ def whitelist_wrapper(group, name, friendly_name):
                 await rule.remove_whitelist_role(ctx.guild, role)
         await ctx.send(f"`{role}` added to the whitelist.")
 
-    return whitelistrole
+    return whitelistrole_add
 
 
 def whitelistrole_delete_wrapper(group, name, friendly_name):
-    @group.command(name="delwhitelistrole")
+    @group.command(name="delete")
     async def whitelistrole_delete(self, ctx, role: discord.Role):
         """Delete a role from being ignored by automod actions"""
         rule = getattr(self, name)
@@ -215,27 +241,26 @@ def whitelistrole_delete_wrapper(group, name, friendly_name):
 
 
 def whitelistrole_show_wrapper(group, name, friendly_name):
-    @group.command(name="whitelistroleshow")
+    @group.command(name="show")
     async def whitelistrole_show(self, ctx):
         """Show all whitelisted roles"""
         rule = getattr(self, name)
         all_roles = await rule.get_all_whitelisted_roles(ctx.guild)
         if all_roles:
             desc = ", ".join("`{0}`".format(role) for role in all_roles)
+            em = discord.Embed(
+                title="Whitelisted roles", description=desc, color=discord.Color.greyple()
+            )
+            await ctx.send(embed=em)
         else:
-            desc = "`❌` No roles currently whitelisted."
-        # TODO : Pagify
-        em = discord.Embed(
-            title="Whitelisted roles", description=desc, color=discord.Color.greyple()
-        )
-        await ctx.send(embed=em)
+            await ctx.send("`❌` No roles currently whitelisted.")
 
     return whitelistrole_show
 
 
 def add_role_wrapper(group, name, friendly_name):
     @group.command(name="role")
-    async def add_role(self, ctx, rule_name, role: discord.Role):
+    async def add_role(self, ctx, role: discord.Role):
         """
         Set the role to add to offender
 
@@ -268,15 +293,24 @@ for name, friendly_name in groups.items():
     private_message.__name__ = f"private_message_{name}"
     setattr(GroupCommands, f"private_message_{name}", private_message)
 
+    # whitelist settings
+    # whitelist commands inherit whitelist role group
     whitelistrole = whitelist_wrapper(group, name, friendly_name)
     whitelistrole.__name__ = f"whitelistrole_{name}"
     setattr(GroupCommands, f"whitelistrole_{name}", whitelistrole)
 
-    whitelistrole_delete = whitelistrole_delete_wrapper(group, name, friendly_name)
+    #whitelist group
+    whitelistrole_delete = whitelistrole_delete_wrapper(whitelistrole, name, friendly_name)
     whitelistrole_delete.__name__ = f"whitelistrole_delete_{name}"
     setattr(GroupCommands, f"whitelistrole_delete_{name}", whitelistrole_delete)
 
-    whitelistrole_show = whitelistrole_show_wrapper(group, name, friendly_name)
+    # whitelist group
+    whitelistrole_add = whitelistrole_add_wrapper(whitelistrole, name, friendly_name)
+    whitelistrole_add.__name__ = f"whitelistrole_add_{name}"
+    setattr(GroupCommands, f"whitelistrole_add_{name}", whitelistrole_add)
+
+    # whitelist group
+    whitelistrole_show = whitelistrole_show_wrapper(whitelistrole, name, friendly_name)
     whitelistrole_show.__name__ = f"whitelistrole_show_{name}"
     setattr(GroupCommands, f"whitelistrole_show_{name}", whitelistrole_show)
 
