@@ -7,6 +7,7 @@ from redbot.core import Config, commands
 from .rules.wallspam import WallSpamRule
 from .rules.mentionspam import MentionSpamRule
 from .rules.discordinvites import DiscordInviteRule
+from .rules.spamrule import SpamRule
 
 from .constants import *
 
@@ -25,12 +26,24 @@ groups = {
     "mentionspamrule": "Mention spam",
     "wallspamrule": "Wall spam",
     "inviterule": "Discord invites",
+    "spamrule": "General spam"
 }
 
 # thanks Jackenmen#6607 <3
 
 
 class GroupCommands:
+    @commands.group()
+    async def spamrule(self, ctx):
+        """
+        Mass spamming by user or content
+
+        1) It checks if a user has spammed more than 10 times in 12 seconds
+        2) It checks if the content has been spammed 15 times in 17 seconds.
+        """
+        pass
+
+
     # commands specific to mention spam rule
     @commands.group()
     async def mentionspamrule(self, ctx):
@@ -332,10 +345,7 @@ class AutoMod(Cog, Settings, GroupCommands):
         self.config = Config.get_conf(
             self, identifier=78945698745687, force_registration=True
         )
-        # rules
-        self.wallspamrule = WallSpamRule(self.config)
-        self.mentionspamrule = MentionSpamRule(self.config)
-        self.inviterule = DiscordInviteRule(self.config)
+
 
         self.guild_defaults = {
             "settings": {"announcement_channel": None, "is_announcement_enabled": True},
@@ -345,10 +355,18 @@ class AutoMod(Cog, Settings, GroupCommands):
         }
 
         self.config.register_guild(**self.guild_defaults)
+
+        # rules
+        self.wallspamrule = WallSpamRule(self.config)
+        self.mentionspamrule = MentionSpamRule(self.config)
+        self.inviterule = DiscordInviteRule(self.config)
+        self.spamrule = SpamRule(self.config)
+
         self.rules_map = {
             "wallspam": self.wallspamrule,
             "mentionspam": self.mentionspamrule,
             "inviterule": self.inviterule,
+            "spamrule": self.spamrule
         }
 
     async def _take_action(self, rule, message: discord.Message):
