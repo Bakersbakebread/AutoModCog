@@ -9,7 +9,7 @@ groups = {
     "inviterule": "Discord invites",
     "spamrule": "General spam",
     "maxwordsrule": "Maximum words",
-    "maxcharsrule": "Maximum characters"
+    "maxcharsrule": "Maximum characters",
 }
 
 # thanks Jackenmen#6607 <3
@@ -34,7 +34,9 @@ class GroupCommands:
         `The quick brown fox`
         """
         await self.maxwordsrule.set_max_words_length(ctx.guild, max_length)
-        await ctx.send(f"`💬` The maximum number of words in one message is set to `{max_length}`")
+        await ctx.send(
+            f"`💬` The maximum number of words in one message is set to `{max_length}`"
+        )
 
     # commands specific to maxchars
     @commands.group()
@@ -51,7 +53,9 @@ class GroupCommands:
         `This is too long`
         """
         await self.maxcharsrule.set_max_chars_length(ctx.guild, max_length)
-        await ctx.send(f"`💬` The maximum number of characters in one message is set to `{max_length}`")
+        await ctx.send(
+            f"`💬` The maximum number of characters in one message is set to `{max_length}`"
+        )
 
     # commands specific to spamrule
     @commands.group()

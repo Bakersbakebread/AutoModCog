@@ -17,8 +17,12 @@ class CooldownByContent(commands.CooldownMapping):
 
 class SpamChecker:
     def __init__(self):
-        self.by_content = CooldownByContent.from_cooldown(15, 17.0, commands.BucketType.member)
-        self.by_user = commands.CooldownMapping.from_cooldown(10, 12.0, commands.BucketType.user)
+        self.by_content = CooldownByContent.from_cooldown(
+            15, 17.0, commands.BucketType.member
+        )
+        self.by_user = commands.CooldownMapping.from_cooldown(
+            10, 12.0, commands.BucketType.user
+        )
 
     def is_spamming(self, message: discord.Message) -> bool:
         current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
@@ -39,6 +43,7 @@ class SpamRule(BaseRule):
     1) It checks if a user has spammed more than 10 times in 12 seconds
     2) It checks if the content has been spammed 15 times in 17 seconds.
     """
+
     def __init__(self, config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
         self._spam_check = defaultdict(SpamChecker)
@@ -49,5 +54,3 @@ class SpamRule(BaseRule):
             return False
 
         return True
-
-

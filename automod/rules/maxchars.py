@@ -2,12 +2,15 @@ import discord
 
 from .base import BaseRule
 
+
 class MaxCharsRule(BaseRule):
     def __init__(self, config):
         super().__init__(config)
 
     async def set_max_chars_length(self, guild: discord.Guild, max_length: int):
-        await self.config.guild(guild).set_raw(self.rule_name, "max_chars", value=max_length)
+        await self.config.guild(guild).set_raw(
+            self.rule_name, "max_chars", value=max_length
+        )
 
     async def get_max_chars(self, guild: discord.Guild):
         try:
