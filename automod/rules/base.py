@@ -1,5 +1,5 @@
 import discord
-
+from abc import ABC, abstractmethod
 from datetime import datetime
 
 from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS, OPTIONS_MAP
@@ -10,6 +10,10 @@ class BaseRule:
         super().__init__(*args, **kwargs)
         self.config = config
         self.rule_name = self.__class__.__name__
+
+    @abstractmethod
+    async def is_offensive(self, message: discord.Message):
+        pass
 
     # enabling
     async def is_enabled(self, guild: discord.Guild) -> bool or None:
