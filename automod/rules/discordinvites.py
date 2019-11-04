@@ -1,9 +1,12 @@
 import discord
 import re
 
+import logging
+
 from .base import BaseRule
 from ..utils import *
 
+log = logging.getLogger("red.breadcogs.automod")
 
 class DiscordInviteRule(BaseRule):
     def __init__(self, config):
@@ -56,9 +59,15 @@ class DiscordInviteRule(BaseRule):
             "(https?:\/\/)?(www\.)?((discordapp\.com/invite)|(discord\.gg))\/(\w+)"
         )
 
-        filter_content = [x for x in content.split() if x not in allowed_links]
+        if allowed_links:
+            filter_content = [x for x in content.split() if x not in allowed_links]
+        else:
+            filter_content = content.split()
 
         has_offensive = list(filter(r.match, filter_content))
 
         if has_offensive:
             return True
+
+
+
