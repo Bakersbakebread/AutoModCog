@@ -1,12 +1,9 @@
 import discord
 import re
 
-import logging
-
 from .base import BaseRule
 from ..utils import *
 
-log = logging.getLogger("red.breadcogs.automod")
 
 class DiscordInviteRule(BaseRule):
     def __init__(self, config):
@@ -68,6 +65,3 @@ class DiscordInviteRule(BaseRule):
 
         if has_offensive:
             return True
-
-
-
