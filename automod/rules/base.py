@@ -30,12 +30,12 @@ class BaseRule:
                 self.rule_name, "is_enabled"
             )
             await self.config.guild(guild).set_raw(
-                self.rule_name, value={"is_enabled": not before}
+                self.rule_name, "is_enabled", value=not before
             )
             return before, not before
         except KeyError:
             await self.config.guild(guild).set_raw(
-                self.rule_name, value={"is_enabled": True}
+                self.rule_name,"is_enabled",  value=True
             )
             return False, True
 

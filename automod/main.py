@@ -170,3 +170,9 @@ class AutoMod(Cog, Settings, GroupCommands):
 
                 if await rule.is_offensive(message):
                     await self._take_action(rule, message)
+
+    @Cog.listener()
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        log.info(f'Message changed! {before.author}')
+        await self._listen_for_infractions(after)
+
