@@ -8,6 +8,8 @@ from .rules.wallspam import WallSpamRule
 from .rules.mentionspam import MentionSpamRule
 from .rules.discordinvites import DiscordInviteRule
 from .rules.spamrule import SpamRule
+from .rules.maxchars import MaxCharsRule
+from .rules.maxwords import MaxWordsRule
 
 from .constants import *
 
@@ -26,13 +28,31 @@ groups = {
     "mentionspamrule": "Mention spam",
     "wallspamrule": "Wall spam",
     "inviterule": "Discord invites",
-    "spamrule": "General spam"
+    "spamrule": "General spam",
+    "maxwordsrule": "Maximum words",
+    "maxcharsrule": "Maximum characters"
 }
 
 # thanks Jackenmen#6607 <3
 
 
 class GroupCommands:
+
+    # commands specific to maxwords
+    @commands.group()
+    async def maxwordsrule(self, ctx):
+        """
+        Detects the maximum allowed length of individual words in a single message
+        """
+        pass
+
+    # commands specific to maxchars
+    @commands.group()
+    async def maxcharsrule(self, ctx):
+        """Detects the maximum allowed individual characters in a single message"""
+        pass
+
+    # commands specific to spamrule
     @commands.group()
     async def spamrule(self, ctx):
         """
@@ -42,7 +62,6 @@ class GroupCommands:
         2) It checks if the content has been spammed 15 times in 17 seconds.
         """
         pass
-
 
     # commands specific to mention spam rule
     @commands.group()
@@ -361,12 +380,16 @@ class AutoMod(Cog, Settings, GroupCommands):
         self.mentionspamrule = MentionSpamRule(self.config)
         self.inviterule = DiscordInviteRule(self.config)
         self.spamrule = SpamRule(self.config)
+        self.maxwords = MaxWordsRule(self.config)
+        self.maxchars = MaxCharsRule(self.config)
 
         self.rules_map = {
             "wallspam": self.wallspamrule,
             "mentionspam": self.mentionspamrule,
             "inviterule": self.inviterule,
-            "spamrule": self.spamrule
+            "spamrule": self.spamrule,
+            "maxwords": self.maxwords,
+            "maxchars": self.maxchars
         }
 
     async def _take_action(self, rule, message: discord.Message):
@@ -387,16 +410,21 @@ class AutoMod(Cog, Settings, GroupCommands):
         )
         should_delete = await rule.get_should_delete(guild)
 
+        message_has_been_deleted = False
         if should_delete:
             try:
                 await message.delete()
+                message_has_been_deleted = True
             except discord.errors.Forbidden:
-                log.warning("Missing permissions to delete message")
+                log.warning(f"[AutoMod] {rule.name} - Missing permissions to delete message")
+            except discord.errors.NotFound:
+                message_has_been_deleted = True
+                log.warning(f"[AutoMod] {rule.name} - Could not delete message as it does not exist")
 
         if should_announce:
             if announce_channel is not None:
                 announce_embed = await rule.get_announcement_embed(
-                    message, action_to_take
+                    message, message_has_been_deleted, action_to_take
                 )
                 announce_channel_obj = guild.get_channel(announce_channel)
                 await announce_channel_obj.send(embed=announce_embed)

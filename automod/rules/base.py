@@ -180,28 +180,38 @@ class BaseRule:
         return before_role, after_role
 
     async def get_announcement_embed(
-        self, message: discord.Message, action_taken=None
+        self, message: discord.Message, message_has_been_deleted: bool, action_taken=None
     ) -> discord.Embed:
         shortened_message_content = (
             (message.content[:120] + " .... (shortened)")
             if len(message.content.split()) > 25
             else message.content
         )
+
         embed = discord.Embed(
             title=f"{self.rule_name} - Offense found",
             description=f"`{shortened_message_content}`",
             color=discord.Color.gold(),
         )
+
         embed.set_author(name=f"{message.author} - {message.author.id}")
         embed.timestamp = datetime.now()
 
-        embed.add_field(
-            name="Jump to message",
-            value=f"[Click here to jump to message]({message.jump_url})",
-        )
-
+        if not message_has_been_deleted:
+            embed.add_field(
+                name="Jump to message",
+                value=f"[🔗 Click here to jump to message]({message.jump_url})",
+            )
         if action_taken:
-            embed.add_field(name="Action Taken", value=f"`{action_taken}`")
+            val = f"`{action_taken}`"
+
+            if message_has_been_deleted:
+                val += f"\n\n**Message has been deleted.**"
+
+            embed.add_field(
+                name="Action Taken",
+                value=val,
+                inline=False)
 
         return embed
 
