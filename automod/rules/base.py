@@ -35,7 +35,7 @@ class BaseRule:
             return before, not before
         except KeyError:
             await self.config.guild(guild).set_raw(
-                self.rule_name,"is_enabled",  value=True
+                self.rule_name, "is_enabled", value=True
             )
             return False, True
 
@@ -180,7 +180,10 @@ class BaseRule:
         return before_role, after_role
 
     async def get_announcement_embed(
-        self, message: discord.Message, message_has_been_deleted: bool, action_taken=None
+        self,
+        message: discord.Message,
+        message_has_been_deleted: bool,
+        action_taken=None,
     ) -> discord.Embed:
         shortened_message_content = (
             (message.content[:120] + " .... (shortened)")
@@ -208,10 +211,7 @@ class BaseRule:
             if message_has_been_deleted:
                 val += f"\n\n**Message has been deleted.**"
 
-            embed.add_field(
-                name="Action Taken",
-                value=val,
-                inline=False)
+            embed.add_field(name="Action Taken", value=val, inline=False)
 
         return embed
 

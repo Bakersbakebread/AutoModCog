@@ -25,6 +25,7 @@ from .utils import (
 
 log = logging.getLogger(name="red.breadcogs.automod")
 
+
 class AutoMod(Cog, Settings, GroupCommands):
     def __init__(self, bot, *args, **kwargs):
 
@@ -33,7 +34,6 @@ class AutoMod(Cog, Settings, GroupCommands):
         self.config = Config.get_conf(
             self, identifier=78945698745687, force_registration=True
         )
-
 
         self.guild_defaults = {
             "settings": {"announcement_channel": None, "is_announcement_enabled": True},
@@ -58,7 +58,7 @@ class AutoMod(Cog, Settings, GroupCommands):
             "inviterule": self.inviterule,
             "spamrule": self.spamrule,
             "maxwords": self.maxwordsrule,
-            "maxchars": self.maxcharsrule
+            "maxchars": self.maxcharsrule,
         }
 
     async def _take_action(self, rule, message: discord.Message):
@@ -85,10 +85,14 @@ class AutoMod(Cog, Settings, GroupCommands):
                 await message.delete()
                 message_has_been_deleted = True
             except discord.errors.Forbidden:
-                log.warning(f"[AutoMod] {rule.name} - Missing permissions to delete message")
+                log.warning(
+                    f"[AutoMod] {rule.name} - Missing permissions to delete message"
+                )
             except discord.errors.NotFound:
                 message_has_been_deleted = True
-                log.warning(f"[AutoMod] {rule.name} - Could not delete message as it does not exist")
+                log.warning(
+                    f"[AutoMod] {rule.name} - Could not delete message as it does not exist"
+                )
 
         if should_announce:
             if announce_channel is not None:
@@ -173,6 +177,5 @@ class AutoMod(Cog, Settings, GroupCommands):
 
     @Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        log.info(f'Message changed! {before.author}')
+        log.info(f"Message changed! {before.author}")
         await self._listen_for_infractions(after)
-
