@@ -25,11 +25,33 @@ class GroupCommands:
         """
         pass
 
+    @maxwordsrule.command(name="threshold")
+    async def _maxwords_threshold(self, ctx, max_length: int):
+        """Set the threshold for the amount of individual words allowed
+
+        For example, if the threshold is set to 4 this sentence would be caught:
+
+        `The quick brown fox`
+        """
+        await self.maxwordsrule.set_max_words_length(ctx.guild, max_length)
+        await ctx.send(f"`💬` The maximum number of words in one message is set to `{max_length}`")
+
     # commands specific to maxchars
     @commands.group()
     async def maxcharsrule(self, ctx):
         """Detects the maximum allowed individual characters in a single message"""
         pass
+
+    @maxcharsrule.command(name="threshold")
+    async def _max_chars_threshold(self, ctx, max_length: int):
+        """Set the threshold for the amount of individual characters allowed
+
+        For example, if the threshold is set to 10 this sentence would be caught:
+
+        `This is too long`
+        """
+        await self.maxcharsrule.set_max_chars_length(ctx.guild, max_length)
+        await ctx.send(f"`💬` The maximum number of characters in one message is set to `{max_length}`")
 
     # commands specific to spamrule
     @commands.group()

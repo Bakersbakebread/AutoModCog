@@ -49,16 +49,16 @@ class AutoMod(Cog, Settings, GroupCommands):
         self.mentionspamrule = MentionSpamRule(self.config)
         self.inviterule = DiscordInviteRule(self.config)
         self.spamrule = SpamRule(self.config)
-        self.maxwords = MaxWordsRule(self.config)
-        self.maxchars = MaxCharsRule(self.config)
+        self.maxwordsrule = MaxWordsRule(self.config)
+        self.maxcharsrule = MaxCharsRule(self.config)
 
         self.rules_map = {
             "wallspam": self.wallspamrule,
             "mentionspam": self.mentionspamrule,
             "inviterule": self.inviterule,
             "spamrule": self.spamrule,
-            "maxwords": self.maxwords,
-            "maxchars": self.maxchars
+            "maxwords": self.maxwordsrule,
+            "maxchars": self.maxcharsrule
         }
 
     async def _take_action(self, rule, message: discord.Message):
