@@ -56,7 +56,10 @@ class DiscordInviteRule(BaseRule):
             "(https?:\/\/)?(www\.)?((discordapp\.com/invite)|(discord\.gg))\/(\w+)"
         )
 
-        filter_content = [x for x in content.split() if x not in allowed_links]
+        if allowed_links:
+            filter_content = [x for x in content.split() if x not in allowed_links]
+        else:
+            filter_content = content.split()
 
         has_offensive = list(filter(r.match, filter_content))
 
