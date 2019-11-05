@@ -216,20 +216,6 @@ def delete_message_wrapper(group, name, friendly_name):
     return delete_message
 
 
-def private_message_wrapper(group, name, friendly_name):
-    @group.command(name="message")
-    async def private_message(self, ctx):
-        """
-        Toggles whether to send a Private Message to the user.
-
-        This method will fail silently.
-        """
-        rule = getattr(self, name)
-        return await ctx.send("This setting is a WIP")
-
-    return private_message
-
-
 def whitelist_wrapper(group, name, friendly_name):
     @group.group(name="whitelistrole")
     async def whitelistrole(self, ctx):
@@ -328,10 +314,6 @@ for name, friendly_name in groups.items():
     delete_message = delete_message_wrapper(group, name, friendly_name)
     delete_message.__name__ = f"delete_{name}"
     setattr(GroupCommands, f"delete_{name}", delete_message)
-
-    private_message = private_message_wrapper(group, name, friendly_name)
-    private_message.__name__ = f"private_message_{name}"
-    setattr(GroupCommands, f"private_message_{name}", private_message)
 
     # whitelist settings
     # whitelist commands inherit whitelist role group

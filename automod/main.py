@@ -177,5 +177,4 @@ class AutoMod(Cog, Settings, GroupCommands):
 
     @Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        log.info(f"Message changed! {before.author}")
         await self._listen_for_infractions(after)
