@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 import discord
-import enum
 
 from .base import BaseRule
 

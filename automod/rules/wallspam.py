@@ -1,11 +1,6 @@
 import discord
 from .base import BaseRule
 
-from ..utils import *
-
-from redbot.core import commands
-
-
 class WallSpamRule(BaseRule):
     async def is_offensive(self, message):
         try:

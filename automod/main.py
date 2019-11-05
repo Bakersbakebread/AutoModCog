@@ -15,13 +15,7 @@ from .constants import *
 from .groupcommands import GroupCommands
 
 from .settings import Settings
-from .utils import (
-    transform_bool,
-    get_option_reaction,
-    thumbs_up_success,
-    yes_or_no,
-    maybe_add_role,
-)
+from .utils import maybe_add_role
 
 log = logging.getLogger(name="red.breadcogs.automod")
 

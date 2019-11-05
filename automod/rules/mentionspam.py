@@ -2,8 +2,6 @@ import discord
 from .base import BaseRule
 
 from ..utils import *
-
-from redbot.core import commands
 import logging
 import re
 
