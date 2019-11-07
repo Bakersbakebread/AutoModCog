@@ -199,6 +199,9 @@ class BaseRule:
 
         embed.set_author(name=f"{message.author} - {message.author.id}")
         embed.timestamp = datetime.now()
+        embed.set_image(
+            url=f"https://dummyimage.com/200x50/f31e13/ffffff.png&text={self.rule_name.replace('Rule', '')}"
+        )
 
         if not message_has_been_deleted:
             embed.add_field(

@@ -85,7 +85,7 @@ class AutoMod(Cog, Settings, GroupCommands):
             except discord.errors.NotFound:
                 message_has_been_deleted = True
                 log.warning(
-                    f"[AutoMod] {rule.name} - Could not delete message as it does not exist"
+                    f"[AutoMod] {rule.rule_name} - Could not delete message as it does not exist"
                 )
 
         if should_announce:
