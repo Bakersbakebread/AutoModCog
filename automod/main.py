@@ -80,7 +80,7 @@ class AutoMod(Cog, Settings, GroupCommands):
                 message_has_been_deleted = True
             except discord.errors.Forbidden:
                 log.warning(
-                    f"[AutoMod] {rule.name} - Missing permissions to delete message"
+                    f"[AutoMod] {rule.rule_name} - Missing permissions to delete message"
                 )
             except discord.errors.NotFound:
                 message_has_been_deleted = True
@@ -149,8 +149,9 @@ class AutoMod(Cog, Settings, GroupCommands):
             return
 
         # immune from automod actions
-        if await self.bot.is_automod_immune(message.author):
-            return
+        if isinstance(author, discord.Member):
+            if await self.bot.is_automod_immune(message.author):
+                return
 
         # don't listen to other bots, no skynet here
         if message.author.bot:
