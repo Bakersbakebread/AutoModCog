@@ -1,5 +1,5 @@
 import discord
-from redbot.core import commands
+from redbot.core import commands, checks
 from .constants import *
 from .utils import *
 
@@ -19,6 +19,7 @@ class GroupCommands:
 
     # commands specific to maxwords
     @commands.group()
+    @checks.mod_or_permissions(manage_messages=True)
     async def maxwordsrule(self, ctx):
         """
         Detects the maximum allowed length of individual words in a single message
@@ -26,6 +27,7 @@ class GroupCommands:
         pass
 
     @maxwordsrule.command(name="threshold")
+    @checks.mod_or_permissions(manage_messages=True)
     async def _maxwords_threshold(self, ctx, max_length: int):
         """Set the threshold for the amount of individual words allowed
 
@@ -38,11 +40,13 @@ class GroupCommands:
 
     # commands specific to maxchars
     @commands.group()
+    @checks.mod_or_permissions(manage_messages=True)
     async def maxcharsrule(self, ctx):
         """Detects the maximum allowed individual characters in a single message"""
         pass
 
     @maxcharsrule.command(name="threshold")
+    @checks.mod_or_permissions(manage_messages=True)
     async def _max_chars_threshold(self, ctx, max_length: int):
         """Set the threshold for the amount of individual characters allowed
 
@@ -57,6 +61,7 @@ class GroupCommands:
 
     # commands specific to spamrule
     @commands.group()
+    @checks.mod_or_permissions(manage_messages=True)
     async def spamrule(self, ctx):
         """
         Mass spamming by user or content
@@ -68,11 +73,13 @@ class GroupCommands:
 
     # commands specific to mention spam rule
     @commands.group()
+    @checks.mod_or_permissions(manage_messages=True)
     async def mentionspamrule(self, ctx):
         """Individual mentions spam settings"""
         pass
 
     @mentionspamrule.command()
+    @checks.mod_or_permissions(manage_messages=True)
     async def threshold(self, ctx, threshold: int):
         """Set the max amount of individual mentions allowed
 
@@ -83,12 +90,14 @@ class GroupCommands:
 
     # commands specific to wall spam rule
     @commands.group()
+    @checks.mod_or_permissions(manage_messages=True)
     async def wallspamrule(self, ctx):
         """Walls of text/emojis settings"""
         pass
 
     # commands specific to discord invite rule
     @commands.group()
+    @checks.mod_or_permissions(manage_messages=True)
     async def inviterule(self, ctx):
         """Filters discord invites
 
@@ -99,6 +108,7 @@ class GroupCommands:
         pass
 
     @inviterule.group()
+    @checks.mod_or_permissions(manage_messages=True)
     async def whitelistlink(self, ctx):
         """Add/remove/show links allowed
 
@@ -106,6 +116,7 @@ class GroupCommands:
         pass
 
     @whitelistlink.command(name="add")
+    @checks.mod_or_permissions(manage_messages=True)
     async def add_link(self, ctx, link: str):
         """
         Add a link to not be filtered.
@@ -123,6 +134,7 @@ class GroupCommands:
         return await ctx.send(f"`👍` Added `{link}` to the allowed links list.")
 
     @whitelistlink.command(name="delete")
+    @checks.mod_or_permissions(manage_messages=True)
     async def delete_link(self, ctx, link: str):
         """
         Deletes a link from the ignore list
@@ -135,6 +147,7 @@ class GroupCommands:
             await ctx.send(f"`❌` {e.args[0]}")
 
     @whitelistlink.command(name="show")
+    @checks.mod_or_permissions(manage_messages=True)
     async def show_links(self, ctx):
         """
         Show a list of links that are not filtered.
@@ -152,6 +165,7 @@ class GroupCommands:
 
 def enable_rule_wrapper(group, name, friendly_name):
     @group.command(name="toggle")
+    @checks.mod_or_permissions(manage_messages=True)
     async def enable_rule(self, ctx):
         """
         Toggle enabling/disabling this rule
@@ -168,6 +182,7 @@ def enable_rule_wrapper(group, name, friendly_name):
 
 def action_to_take__wrapper(group, name, friendly_name):
     @group.command(name="action")
+    @checks.mod_or_permissions(manage_messages=True)
     async def action_to_take(self, ctx):
         """
         Choose which action to take on an offensive message
@@ -199,6 +214,7 @@ def action_to_take__wrapper(group, name, friendly_name):
 
 def delete_message_wrapper(group, name, friendly_name):
     @group.command(name="delete")
+    @checks.mod_or_permissions(manage_messages=True)
     async def delete_message(self, ctx):
         """
         Toggles whether message should be deleted on offence
@@ -216,6 +232,7 @@ def delete_message_wrapper(group, name, friendly_name):
 
 def whitelist_wrapper(group, name, friendly_name):
     @group.group(name="whitelistrole")
+    @checks.mod_or_permissions(manage_messages=True)
     async def whitelistrole(self, ctx):
         """Whitelisting roles settings
 
@@ -228,6 +245,7 @@ def whitelist_wrapper(group, name, friendly_name):
 
 def whitelistrole_add_wrapper(group, name, friendly_name):
     @group.command(name="add")
+    @checks.mod_or_permissions(manage_messages=True)
     async def whitelistrole_add(self, ctx, role: discord.Role):
         """
                 Add a role to be ignored by automod actions"
@@ -249,6 +267,7 @@ def whitelistrole_add_wrapper(group, name, friendly_name):
 
 def whitelistrole_delete_wrapper(group, name, friendly_name):
     @group.command(name="delete")
+    @checks.mod_or_permissions(manage_messages=True)
     async def whitelistrole_delete(self, ctx, role: discord.Role):
         """Delete a role from being ignored by automod actions"""
         rule = getattr(self, name)
@@ -262,6 +281,7 @@ def whitelistrole_delete_wrapper(group, name, friendly_name):
 
 def whitelistrole_show_wrapper(group, name, friendly_name):
     @group.command(name="show")
+    @checks.mod_or_permissions(manage_messages=True)
     async def whitelistrole_show(self, ctx):
         """Show all whitelisted roles"""
         rule = getattr(self, name)
@@ -280,6 +300,7 @@ def whitelistrole_show_wrapper(group, name, friendly_name):
 
 def add_role_wrapper(group, name, friendly_name):
     @group.command(name="role")
+    @checks.mod_or_permissions(manage_messages=True)
     async def add_role(self, ctx, role: discord.Role):
         """
         Set the role to add to offender
