@@ -26,26 +26,18 @@ class BaseRule:
     async def toggle_enabled(self, guild: discord.Guild) -> (bool, bool):
         """Toggles whether the rule is in effect"""
         try:
-            before = await self.config.guild(guild).get_raw(
-                self.rule_name, "is_enabled"
-            )
-            await self.config.guild(guild).set_raw(
-                self.rule_name, "is_enabled", value=not before
-            )
+            before = await self.config.guild(guild).get_raw(self.rule_name, "is_enabled")
+            await self.config.guild(guild).set_raw(self.rule_name, "is_enabled", value=not before)
             return before, not before
         except KeyError:
-            await self.config.guild(guild).set_raw(
-                self.rule_name, "is_enabled", value=True
-            )
+            await self.config.guild(guild).set_raw(self.rule_name, "is_enabled", value=True)
             return False, True
 
     # actions
     async def get_action_to_take(self, guild: discord.Guild) -> str:
         """Helper to return what action is currently set on offence"""
         try:
-            return await self.config.guild(guild).get_raw(
-                self.rule_name, "action_to_take"
-            )
+            return await self.config.guild(guild).get_raw(self.rule_name, "action_to_take")
         except KeyError:
             await self.config.guild(guild).set_raw(
                 self.rule_name, "action_to_take", value=DEFAULT_ACTION
@@ -54,34 +46,24 @@ class BaseRule:
 
     async def set_action_to_take(self, action: str, guild: discord.Guild):
         """Sets the action to take on an offence"""
-        await self.config.guild(guild).set_raw(
-            self.rule_name, "action_to_take", value=action
-        )
+        await self.config.guild(guild).set_raw(self.rule_name, "action_to_take", value=action)
 
     async def get_should_delete(self, guild: discord.Guild):
         try:
-            return await self.config.guild(guild).get_raw(
-                self.rule_name, "delete_message"
-            )
+            return await self.config.guild(guild).get_raw(self.rule_name, "delete_message")
         except KeyError:
             return True
 
     async def toggle_to_delete_message(self, guild: discord.Guild) -> (bool, bool):
         """Toggles whether offending message should be deleted"""
         try:
-            before = await self.config.guild(guild).get_raw(
-                self.rule_name, "delete_message"
-            )
+            before = await self.config.guild(guild).get_raw(self.rule_name, "delete_message")
         except KeyError:
             before = True
-        await self.config.guild(guild).set_raw(
-            self.rule_name, "delete_message", value=not before
-        )
+        await self.config.guild(guild).set_raw(self.rule_name, "delete_message", value=not before)
         return before, not before
 
-    async def role_is_whitelisted(
-        self, guild: discord.Guild, roles: [discord.Role]
-    ) -> bool:
+    async def role_is_whitelisted(self, guild: discord.Guild, roles: [discord.Role]) -> bool:
         """Checks if role is whitelisted"""
         try:
             whitelist_roles = await self.config.guild(guild).get_raw(
@@ -100,16 +82,12 @@ class BaseRule:
     async def append_whitelist_role(self, guild: discord.Guild, role: discord.Role):
         """Adds role to whitelist"""
         try:
-            roles = await self.config.guild(guild).get_raw(
-                self.rule_name, "whitelist_roles"
-            )
+            roles = await self.config.guild(guild).get_raw(self.rule_name, "whitelist_roles")
             if role.id in roles:
                 raise ValueError("Role is already whitelisted")
 
             roles.append(role.id)
-            await self.config.guild(guild).set_raw(
-                self.rule_name, "whitelist_roles", value=roles
-            )
+            await self.config.guild(guild).set_raw(self.rule_name, "whitelist_roles", value=roles)
 
         except KeyError:
             # no roles added yet
@@ -119,23 +97,17 @@ class BaseRule:
 
     async def remove_whitelist_role(self, guild: discord.Guild, role: discord.Role):
         """Removes role from whitelist"""
-        roles = await self.config.guild(guild).get_raw(
-            self.rule_name, "whitelist_roles"
-        )
+        roles = await self.config.guild(guild).get_raw(self.rule_name, "whitelist_roles")
         if not role.id in roles:
             raise ValueError("That role is not whitelisted")
 
         roles.remove(role.id)
 
-        await self.config.guild(guild).set_raw(
-            self.rule_name, "whitelist_roles", value=roles
-        )
+        await self.config.guild(guild).set_raw(self.rule_name, "whitelist_roles", value=roles)
 
     async def get_all_whitelisted_roles(self, guild: discord.Guild):
         try:
-            roles = await self.config.guild(guild).get_raw(
-                self.rule_name, "whitelist_roles"
-            )
+            roles = await self.config.guild(guild).get_raw(self.rule_name, "whitelist_roles")
         except KeyError:
             # no roles added
             return None
@@ -149,25 +121,19 @@ class BaseRule:
                 self.rule_name, "send_dm", value=DEFAULT_OPTIONS["send_dm"]
             )
 
-        await self.config.guild(guild).set_raw(
-            self.rule_name, "send_dm", value=(not before)
-        )
+        await self.config.guild(guild).set_raw(self.rule_name, "send_dm", value=(not before))
         return before, not before
 
     async def set_mute_role(self, guild: discord.Guild, role: discord.Role) -> tuple:
 
         before = None
         try:
-            before = await self.config.guild(guild).get_raw(
-                self.rule_name, "role_to_add"
-            )
+            before = await self.config.guild(guild).get_raw(self.rule_name, "role_to_add")
         except KeyError:
             # role not set yet probably
             pass
 
-        await self.config.guild(guild).set_raw(
-            self.rule_name, "role_to_add", value=role.id
-        )
+        await self.config.guild(guild).set_raw(self.rule_name, "role_to_add", value=role.id)
 
         before_role = None
         if before:
@@ -180,10 +146,7 @@ class BaseRule:
         return before_role, after_role
 
     async def get_announcement_embed(
-        self,
-        message: discord.Message,
-        message_has_been_deleted: bool,
-        action_taken=None,
+        self, message: discord.Message, message_has_been_deleted: bool, action_taken=None
     ) -> discord.Embed:
         shortened_message_content = (
             (message.content[:120] + " .... (shortened)")
