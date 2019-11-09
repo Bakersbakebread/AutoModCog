@@ -1,5 +1,6 @@
 import discord
-from redbot.core.commands import command, commands
+from redbot.core.commands import commands
+from redbot.core import checks
 import logging
 
 from .utils import transform_bool
@@ -53,11 +54,13 @@ class Settings:
         return before, not before
 
     @commands.group()
+    @checks.mod_or_permissions(manage_messages=True)
     async def automodset(self, ctx):
         """Change the announcement settings"""
         pass
 
     @automodset.group()
+    @checks.mod_or_permissions(manage_messages=True)
     async def announce(self, ctx):
         """
         Message announcement settings
@@ -65,6 +68,7 @@ class Settings:
         pass
 
     @announce.command(name="enable")
+    @checks.mod_or_permissions(manage_messages=True)
     async def _enable(self, ctx):
         """
         Toggles sending announcement messages on infractions
@@ -77,6 +81,7 @@ class Settings:
         )
 
     @announce.command()
+    @checks.mod_or_permissions(manage_messages=True)
     async def channel(self, ctx, channel: discord.TextChannel):
         """
         Set the channel where announcements should be posted.
