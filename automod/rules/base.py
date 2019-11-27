@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS, OPTIONS_MAP
-from async_lru import alru_cache as lru_cache
+from async_lru import alru_cache
 import timeit
 
 class BaseRule:
@@ -17,7 +17,7 @@ class BaseRule:
         pass
 
     # enabling
-    @lru_cache(maxsize=32)
+    @alru_cache(maxsize=32)
     async def is_enabled(self, guild: discord.Guild) -> bool or None:
         """Helper to return the status of Rule"""
         print('in function')
@@ -29,6 +29,11 @@ class BaseRule:
     async def toggle_enabled(self, guild: discord.Guild) -> (bool, bool):
         """Toggles whether the rule is in effect"""
         try:
+            await self.is_enabled.cache_clear()
+        except TypeError:
+            #cache probably not exists or clear already
+            pass
+        try:
             before = await self.config.guild(guild).get_raw(self.rule_name, "is_enabled")
             await self.config.guild(guild).set_raw(self.rule_name, "is_enabled", value=not before)
             return before, not before
@@ -36,8 +41,10 @@ class BaseRule:
             await self.config.guild(guild).set_raw(self.rule_name, "is_enabled", value=True)
             return False, True
 
+
+
     # actions
-    @lru_cache(maxsize=32)
+    @alru_cache(maxsize=32)
     async def get_action_to_take(self, guild: discord.Guild) -> str:
         """Helper to return what action is currently set on offence"""
         try:
@@ -52,7 +59,7 @@ class BaseRule:
         """Sets the action to take on an offence"""
         await self.config.guild(guild).set_raw(self.rule_name, "action_to_take", value=action)
 
-    @lru_cache(maxsize=32)
+    @alru_cache(maxsize=32)
     async def get_should_delete(self, guild: discord.Guild):
         try:
             return await self.config.guild(guild).get_raw(self.rule_name, "delete_message")
@@ -110,7 +117,7 @@ class BaseRule:
 
         await self.config.guild(guild).set_raw(self.rule_name, "whitelist_roles", value=roles)
 
-    @lru_cache(maxsize=32)
+    @alru_cache(maxsize=32)
     async def get_all_whitelisted_roles(self, guild: discord.Guild):
         try:
             roles = await self.config.guild(guild).get_raw(self.rule_name, "whitelist_roles")
@@ -168,9 +175,9 @@ class BaseRule:
 
         embed.set_author(name=f"{message.author} - {message.author.id}")
         embed.timestamp = datetime.now()
-        embed.set_image(
-            url=f"https://dummyimage.com/200x50/f31e13/ffffff.png&text={self.rule_name.replace('Rule', '')}"
-        )
+        # embed.set_image(
+        #     url=f"https://dummyimage.com/200x50/f31e13/ffffff.png&text={self.rule_name.replace('Rule', '')}"
+        # )
 
         if not message_has_been_deleted:
             embed.add_field(
