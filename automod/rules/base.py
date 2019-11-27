@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS, OPTIONS_MAP
-
+from async_lru import alru_cache as lru_cache
+import timeit
 
 class BaseRule:
     def __init__(self, config, *args, **kwargs):
@@ -16,8 +17,10 @@ class BaseRule:
         pass
 
     # enabling
+    @lru_cache(maxsize=32)
     async def is_enabled(self, guild: discord.Guild) -> bool or None:
         """Helper to return the status of Rule"""
+        print('in function')
         try:
             return await self.config.guild(guild).get_raw(self.rule_name, "is_enabled")
         except KeyError:
@@ -34,6 +37,7 @@ class BaseRule:
             return False, True
 
     # actions
+    @lru_cache(maxsize=32)
     async def get_action_to_take(self, guild: discord.Guild) -> str:
         """Helper to return what action is currently set on offence"""
         try:
@@ -48,6 +52,7 @@ class BaseRule:
         """Sets the action to take on an offence"""
         await self.config.guild(guild).set_raw(self.rule_name, "action_to_take", value=action)
 
+    @lru_cache(maxsize=32)
     async def get_should_delete(self, guild: discord.Guild):
         try:
             return await self.config.guild(guild).get_raw(self.rule_name, "delete_message")
@@ -105,6 +110,7 @@ class BaseRule:
 
         await self.config.guild(guild).set_raw(self.rule_name, "whitelist_roles", value=roles)
 
+    @lru_cache(maxsize=32)
     async def get_all_whitelisted_roles(self, guild: discord.Guild):
         try:
             roles = await self.config.guild(guild).get_raw(self.rule_name, "whitelist_roles")
