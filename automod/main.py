@@ -123,6 +123,9 @@ class AutoMod(Cog, Settings, GroupCommands):
             except discord.errors.HTTPException:
                 log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
 
+    @Cog.listener()
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        await self._listen_for_infractions(after)
 
     @Cog.listener(name="on_message_without_command")
     async def _listen_for_infractions(self, message: discord.Message):
@@ -145,13 +148,12 @@ class AutoMod(Cog, Settings, GroupCommands):
             if await rule.is_enabled(guild):
                 # check all if roles - if any are immune, then that's okay, we'll let them spam :)
                 is_whitelisted_role = await rule.role_is_whitelisted(guild, author.roles)
-                if is_whitelisted_role:
-                    # user is whitelisted, let's stop here
+                is_channel_or_global = await rule.is_enforced_channel(guild, message.channel)
+                if is_whitelisted_role or not is_channel_or_global:
+                    # user is whitelisted, channel is not whitelisted let's stop here
                     return
 
                 if await rule.is_offensive(message):
                     await self._take_action(rule, message)
 
-    @Cog.listener()
-    async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        await self._listen_for_infractions(after)
+

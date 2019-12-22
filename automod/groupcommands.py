@@ -325,10 +325,19 @@ def add_channel_wrapper(group, name, friendly_name):
         The default setting is global, passing nothing will reset to global.
         """
         rule = getattr(self, name)
-        if not channels:
-            return await ctx.send('Cleared the channels. 🍞')
         set_channels = await rule.set_enforced_channels(ctx.guild, channels)
-        await ctx.send([m for m in set_channels])
+        if not channels:
+            should_clear = await yes_or_no(ctx, "Would you like to clear the channels?")
+            if should_clear:
+                channels = []
+            else:
+                return await ctx.send('Okay, no channels changed.')
+        elif not channels:
+            return await ctx.send('Please send me which channels you would like to enforce.')
+
+        enforcing = await rule.set_enforced_channels(ctx.guild, channels)
+        enforcing_string = "\n".join("• `{0}`".format(ctx.guild.get_channel(channel)) for channel in enforcing)
+        await ctx.send(f"Okay, done. Enforcing these channels:\n{enforcing_string}")
 
     return add_channel
 

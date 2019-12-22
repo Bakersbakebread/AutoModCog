@@ -69,6 +69,17 @@ class BaseRule:
 
         return channels
 
+    async def is_enforced_channel(self, guild: discord.Guild, channel: discord.TextChannel):
+        enforced_channels = await self.get_enforced_channels(guild)
+        # global
+        if not enforced_channels:
+            return True
+
+        if channel.id in enforced_channels:
+            return True
+
+        return False
+
     # actions
     @alru_cache(maxsize=32)
     async def get_action_to_take(self, guild: discord.Guild) -> str:
