@@ -44,8 +44,9 @@ class BaseRule:
             await self.config.guild(guild).set_raw(self.rule_name, "is_enabled", value=True)
             return False, True
 
-    async def set_enforced_channels(self, guild: discord.Guild,channels: [discord.TextChannel]):
+    async def set_enforced_channels(self, guild: discord.Guild, channels: [discord.TextChannel]):
         """Setting a channel will disable global"""
+        await self._clear_cache(self.get_enforced_channels)
 
         config_channels = []
 
@@ -56,6 +57,7 @@ class BaseRule:
         await self.config.guild(guild).set_raw(self.rule_name, "enforced_channels", value=config_channels)
         return config_channels
 
+    @alru_cache(maxsize=32)
     async def get_enforced_channels(self, guild: discord.Guild) -> [discord.TextChannel]:
         """Returns enabled channels, empty list if none set"""
 
