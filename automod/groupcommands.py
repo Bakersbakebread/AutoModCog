@@ -315,6 +315,24 @@ def add_role_wrapper(group, name, friendly_name):
     return add_role
 
 
+def add_channel_wrapper(group, name, friendly_name):
+    @group.command(name="channels")
+    @checks.mod_or_permissions(manage_messages=True)
+    async def add_channel(self, ctx, channels: commands.Greedy[discord.TextChannel]):
+        """
+        Set the channels to enforce this rule on.
+
+        The default setting is global, passing nothing will reset to global.
+        """
+        rule = getattr(self, name)
+        if not channels:
+            return await ctx.send('Cleared the channels. 🍞')
+        set_channels = await rule.set_enforced_channels(ctx.guild, channels)
+        await ctx.send([m for m in set_channels])
+
+    return add_channel
+
+
 for name, friendly_name in groups.items():
     group = getattr(GroupCommands, name)
 
@@ -354,3 +372,7 @@ for name, friendly_name in groups.items():
     add_role = add_role_wrapper(group, name, friendly_name)
     add_role.__name__ = f"add_role_{name}"
     setattr(GroupCommands, f"add_role_{name}", add_role)
+
+    add_channel = add_channel_wrapper(group, name, friendly_name)
+    add_channel.__name__ = f"add_role_{name}"
+    setattr(GroupCommands, f"add_role_{name}", add_channel)

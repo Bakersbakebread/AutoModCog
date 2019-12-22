@@ -16,11 +16,18 @@ class BaseRule:
     async def is_offensive(self, message: discord.Message):
         pass
 
+    async def _clear_cache(self, func):
+        """Function helper to clear cache"""
+        try:
+            await func.cache_clear()
+        except TypeError:
+            # cache probably cleared already
+            pass
+
     # enabling
     @alru_cache(maxsize=32)
     async def is_enabled(self, guild: discord.Guild) -> bool or None:
         """Helper to return the status of Rule"""
-        print('in function')
         try:
             return await self.config.guild(guild).get_raw(self.rule_name, "is_enabled")
         except KeyError:
@@ -28,11 +35,7 @@ class BaseRule:
 
     async def toggle_enabled(self, guild: discord.Guild) -> (bool, bool):
         """Toggles whether the rule is in effect"""
-        try:
-            await self.is_enabled.cache_clear()
-        except TypeError:
-            #cache probably not exists or clear already
-            pass
+        await self._clear_cache(self.is_enabled)
         try:
             before = await self.config.guild(guild).get_raw(self.rule_name, "is_enabled")
             await self.config.guild(guild).set_raw(self.rule_name, "is_enabled", value=not before)
@@ -41,7 +44,28 @@ class BaseRule:
             await self.config.guild(guild).set_raw(self.rule_name, "is_enabled", value=True)
             return False, True
 
+    async def set_enforced_channels(self, guild: discord.Guild,channels: [discord.TextChannel]):
+        """Setting a channel will disable global"""
 
+        config_channels = []
+
+        for channel in channels:
+            if channel.id not in config_channels:
+                config_channels.append(channel.id)
+
+        await self.config.guild(guild).set_raw(self.rule_name, "enforced_channels", value=config_channels)
+        return config_channels
+
+    async def get_enforced_channels(self, guild: discord.Guild) -> [discord.TextChannel]:
+        """Returns enabled channels, empty list if none set"""
+
+        channels = []
+        try:
+            channels = await self.config.guild(guild).get_raw(self.rule_name, "enforced_channels")
+        except KeyError:
+            pass
+
+        return channels
 
     # actions
     @alru_cache(maxsize=32)
@@ -57,6 +81,11 @@ class BaseRule:
 
     async def set_action_to_take(self, action: str, guild: discord.Guild):
         """Sets the action to take on an offence"""
+        try:
+            await self.get_action_to_take.cache_clear()
+        except TypeError:
+            #cache probably not exists or clear already
+            pass
         await self.config.guild(guild).set_raw(self.rule_name, "action_to_take", value=action)
 
     @alru_cache(maxsize=32)
@@ -68,6 +97,7 @@ class BaseRule:
 
     async def toggle_to_delete_message(self, guild: discord.Guild) -> (bool, bool):
         """Toggles whether offending message should be deleted"""
+        await self._clear_cache(self.get_should_delete)
         try:
             before = await self.config.guild(guild).get_raw(self.rule_name, "delete_message")
         except KeyError:
@@ -93,6 +123,7 @@ class BaseRule:
 
     async def append_whitelist_role(self, guild: discord.Guild, role: discord.Role):
         """Adds role to whitelist"""
+        await self._clear_cache(self.get_all_whitelisted_roles)
         try:
             roles = await self.config.guild(guild).get_raw(self.rule_name, "whitelist_roles")
             if role.id in roles:
@@ -109,6 +140,7 @@ class BaseRule:
 
     async def remove_whitelist_role(self, guild: discord.Guild, role: discord.Role):
         """Removes role from whitelist"""
+        await self._clear_cache(self.get_all_whitelisted_roles)
         roles = await self.config.guild(guild).get_raw(self.rule_name, "whitelist_roles")
         if not role.id in roles:
             raise ValueError("That role is not whitelisted")

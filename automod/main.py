@@ -2,7 +2,7 @@ import discord
 import logging
 
 from redbot.core.commands import Cog
-from redbot.core import Config, commands
+from redbot.core import Config
 
 from .rules.wallspam import WallSpamRule
 from .rules.mentionspam import MentionSpamRule
@@ -123,19 +123,19 @@ class AutoMod(Cog, Settings, GroupCommands):
             except discord.errors.HTTPException:
                 log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
 
+
     @Cog.listener(name="on_message_without_command")
     async def _listen_for_infractions(self, message: discord.Message):
         guild = message.guild
         author = message.author
 
-        # DM's
         if not message.guild:
             return
 
-        # immune from automod actions
-        if isinstance(author, discord.Member):
-            if await self.bot.is_automod_immune(message.author):
-                return
+        # # immune from automod actions
+        # if isinstance(author, discord.Member):
+        #     if await self.bot.is_automod_immune(message.author):
+        #         return
 
         # don't listen to other bots, no skynet here
         if message.author.bot:
