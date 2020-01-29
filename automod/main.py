@@ -155,5 +155,3 @@ class AutoMod(Cog, Settings, GroupCommands):
 
                 if await rule.is_offensive(message):
                     await self._take_action(rule, message)
-
-

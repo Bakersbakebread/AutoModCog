@@ -6,6 +6,7 @@ from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS, OPTIONS_MAP
 from async_lru import alru_cache
 import timeit
 
+
 class BaseRule:
     def __init__(self, config, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -54,7 +55,9 @@ class BaseRule:
             if channel.id not in config_channels:
                 config_channels.append(channel.id)
 
-        await self.config.guild(guild).set_raw(self.rule_name, "enforced_channels", value=config_channels)
+        await self.config.guild(guild).set_raw(
+            self.rule_name, "enforced_channels", value=config_channels
+        )
         return config_channels
 
     @alru_cache(maxsize=32)
@@ -97,7 +100,7 @@ class BaseRule:
         try:
             await self.get_action_to_take.cache_clear()
         except TypeError:
-            #cache probably not exists or clear already
+            # cache probably not exists or clear already
             pass
         await self.config.guild(guild).set_raw(self.rule_name, "action_to_take", value=action)
 
@@ -222,7 +225,9 @@ class BaseRule:
         if action_taken:
             val = f"`{action_taken}`"
             embed.add_field(name="Action Taken", value=val)
-        embed.set_author(name=f"{message.author} - {message.author.id}", icon_url=message.author.avatar_url)
+        embed.set_author(
+            name=f"{message.author} - {message.author.id}", icon_url=message.author.avatar_url
+        )
         embed.timestamp = datetime.now()
         # embed.set_image(
         #     url=f"https://dummyimage.com/200x50/f31e13/ffffff.png&text={self.rule_name.replace('Rule', '')}"
@@ -232,12 +237,13 @@ class BaseRule:
             embed.add_field(
                 name="Message status",
                 value=f"`❌` Message has **not** been deleted\n[🔗 Click here to jump to message]({message.jump_url})",
-                inline=False
+                inline=False,
             )
         else:
-            embed.add_field(name="Message status", value=f"`✅` Message has been deleted.",inline=False)
+            embed.add_field(
+                name="Message status", value=f"`✅` Message has been deleted.", inline=False
+            )
         return embed
-
 
     async def get_settings_embed(self, guild: discord.Guild):
         """Returns a settings embed"""
