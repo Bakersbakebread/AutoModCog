@@ -1,7 +1,13 @@
-[![Code style: black](https://github.com/jack1142/JackCogs/workflows/black/badge.svg)](https://github.com/ambv/black)
-[![Red cogs](https://img.shields.io/badge/Red--DiscordBot-cogs-red.svg)](https://github.com/Cog-Creators/Red-DiscordBot/tree/V3/develop)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+<p align="center">
+  <img src="https://i.imgur.com/MtTvTk8.png">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Red--DiscordBot-cogs-red.svg">
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg">
+  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg">
+ </p>
+
 
 # Installation
 
