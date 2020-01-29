@@ -214,11 +214,15 @@ class BaseRule:
 
         embed = discord.Embed(
             title=f"{self.rule_name} - Offense found",
-            description=f"`{shortened_message_content}`",
+            description=f"```{shortened_message_content}```",
             color=discord.Color.gold(),
         )
 
-        embed.set_author(name=f"{message.author} - {message.author.id}")
+        embed.add_field(name="Channel", value=f"{message.channel.mention}")
+        if action_taken:
+            val = f"`{action_taken}`"
+            embed.add_field(name="Action Taken", value=val)
+        embed.set_author(name=f"{message.author} - {message.author.id}", icon_url=message.author.avatar_url)
         embed.timestamp = datetime.now()
         # embed.set_image(
         #     url=f"https://dummyimage.com/200x50/f31e13/ffffff.png&text={self.rule_name.replace('Rule', '')}"
@@ -226,18 +230,14 @@ class BaseRule:
 
         if not message_has_been_deleted:
             embed.add_field(
-                name="Jump to message",
-                value=f"[🔗 Click here to jump to message]({message.jump_url})",
+                name="Message status",
+                value=f"`❌` Message has **not** been deleted\n[🔗 Click here to jump to message]({message.jump_url})",
+                inline=False
             )
-        if action_taken:
-            val = f"`{action_taken}`"
-
-            if message_has_been_deleted:
-                val += f"\n\n**Message has been deleted.**"
-
-            embed.add_field(name="Action Taken", value=val, inline=False)
-
+        else:
+            embed.add_field(name="Message status", value=f"`✅` Message has been deleted.",inline=False)
         return embed
+
 
     async def get_settings_embed(self, guild: discord.Guild):
         """Returns a settings embed"""
