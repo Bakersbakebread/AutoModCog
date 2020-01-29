@@ -16,6 +16,10 @@ async def thumbs_up_success(message: str):
     return f"`👍🏼` {message}"
 
 
+async def error_message(message: str):
+    return f"`❌` {message}"
+
+
 async def action_to_take_mapping(index):
     actions = {0: "third_party", 1: "message", 2: "add_role", 3: "kick", 4: "ban"}
     return actions[index]
