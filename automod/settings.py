@@ -72,21 +72,20 @@ class Settings:
         return await rule.get_settings(guild)
 
     async def get_settings_to_embeds(self, settings: [BaseRuleSettingsDisplay]) -> [discord.Embed]:
+
         embeds = []
         setting: BaseRuleSettingsDisplay
         for setting in settings:
             guild = self.bot.get_guild(setting.guild_id)
             embed = discord.Embed(title=setting.rule_name,
             description  = (
-                f"```\n"
-                f"Enabled  : [{setting.is_enabled}]      \n"
-                f"Deleting : [{setting.is_deleting}]     \n"
-                f"Action   : [{setting.action_to_take}]  \n"
+                f"```ini\n"
+                f"Enabled   :   [{setting.is_enabled}]\n"
+                f"Deleting  :   [{setting.is_deleting}]\n"
+                f"---\n"
+                f"Action    :   {setting.action_to_take}  \n"
                 f"```"
             ))
-            # embed.add_field(name="Is enabled", value=str(setting.is_enabled))
-            # embed.add_field(name="Is deleting", value=str(setting.is_deleting))
-            # embed.add_field(name="Action taking", value=setting.action_to_take)
             if setting.enforced_channels:
                 embed.add_field(name="Enforced Channels", value=", ".join(setting.enforced_channels))
             if setting.whitelisted_roles:
@@ -101,7 +100,23 @@ class Settings:
 
     async def get_all_settings_as_embeds(self, guild):
         settings = await self.get_all_settings(guild)
-        return await self.get_settings_to_embeds(settings)
+        setting: BaseRuleSettingsDisplay
+        embed = discord.Embed(title="AutoMod settings")
+        for index, setting in enumerate(settings, 1):
+            value = "```diff\n"
+            if setting.is_enabled:
+                value += "+ Enabled\n"
+            else:
+                value += "- Disabled\n"
+            if setting.is_deleting:
+                value += "+ Deleting\n\n"
+            else:
+                value += "- Not deleting\n\n"
+            value += f"---Action---\n{setting.action_to_take}"
+            value += "```"
+            embed.add_field(name=setting.rule_name,
+                            value=value)
+        return [embed]
 
     async def get_rule_settings_as_embed(self, guild, rule_name):
         try:
