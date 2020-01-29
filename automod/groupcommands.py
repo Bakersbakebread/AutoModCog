@@ -331,12 +331,14 @@ def add_channel_wrapper(group, name, friendly_name):
             if should_clear:
                 channels = []
             else:
-                return await ctx.send('Okay, no channels changed.')
+                return await ctx.send("Okay, no channels changed.")
         elif not channels:
-            return await ctx.send('Please send me which channels you would like to enforce.')
+            return await ctx.send("Please send me which channels you would like to enforce.")
 
         enforcing = await rule.set_enforced_channels(ctx.guild, channels)
-        enforcing_string = "\n".join("• `{0}`".format(ctx.guild.get_channel(channel)) for channel in enforcing)
+        enforcing_string = "\n".join(
+            "• `{0}`".format(ctx.guild.get_channel(channel)) for channel in enforcing
+        )
         await ctx.send(f"Okay, done. Enforcing these channels:\n{enforcing_string}")
 
     return add_channel
