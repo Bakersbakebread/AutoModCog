@@ -1,0 +1,16 @@
+{
+    "author": [
+        "Bread#0007"
+    ],
+    "description": "Automoderated actions with settings at a granular level.",
+    "hidden": false,
+    "install_msg": "Thank you for installing AutoMod!\nSetup your announcement channel with `[p]automodset announce channel`",
+    "required_cogs": [],
+    "requirements": ["async_lru"],
+    "short": "Automoderated actions",
+    "tags": [
+        "command",
+        "automod",
+        "auto"
+    ]
+}
