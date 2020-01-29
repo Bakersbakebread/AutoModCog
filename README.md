@@ -22,10 +22,10 @@ You need to have a working instance of Red V3 in order to install these cogs.
 * Add the repo to your bot:<br>
   `[p]repo add BreadAutoModCog https://github.com/Bakersbakebread/AutoModCog`
 
-* Install the cogs you want:<br>
+* Install the cog:<br>
   `[p]cog install BreadAutoModCog automod`
 
-* Load installed cogs:<br>
+* Load automod:<br>
   ``[p]load automod``
 
 # Credits
