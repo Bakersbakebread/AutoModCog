@@ -287,3 +287,6 @@ class BaseRule:
         embed = discord.Embed(title=f"{self.rule_name} settings", description=desc)
 
         return embed
+
+
+

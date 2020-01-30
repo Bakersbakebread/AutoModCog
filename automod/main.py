@@ -45,12 +45,12 @@ class AutoMod(Cog, Settings, GroupCommands):
         self.maxcharsrule = MaxCharsRule(self.config)
 
         self.rules_map = {
-            "wallspam": self.wallspamrule,
-            "mentionspam": self.mentionspamrule,
+            "wallspamrule": self.wallspamrule,
+            "mentionspamrule": self.mentionspamrule,
             "inviterule": self.inviterule,
             "spamrule": self.spamrule,
-            "maxwords": self.maxwordsrule,
-            "maxchars": self.maxcharsrule,
+            "maxwordsrule": self.maxwordsrule,
+            "maxcharsrule": self.maxcharsrule,
         }
 
     async def _take_action(self, rule, message: discord.Message):

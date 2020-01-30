@@ -17,7 +17,7 @@ async def thumbs_up_success(message: str):
 
 
 async def error_message(message: str):
-    return f"`❌` {message}"
+    return f"\❌ {message}"
 
 
 async def action_to_take_mapping(index):

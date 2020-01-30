@@ -343,9 +343,25 @@ def add_channel_wrapper(group, name, friendly_name):
 
     return add_channel
 
+def settings_wrapper(group, name, friendly_name):
+    @group.command(name="settings")
+    @checks.mod_or_permissions(manage_messages=True)
+    async def _invoke_settings(self, ctx):
+        """
+        Show settings for this rule
+        """
+        rule = getattr(self, name)
+        await ctx.invoke(self.bot.get_command(f"automodset show"), name)
+
+    return _invoke_settings
+
 
 for name, friendly_name in groups.items():
     group = getattr(GroupCommands, name)
+
+    settings = settings_wrapper(group, name, friendly_name)
+    settings.__name__ = f"settings_{name}"
+    setattr(GroupCommands, f"settings_{name}", settings)
 
     enable_rule = enable_rule_wrapper(group, name, friendly_name)
     enable_rule.__name__ = f"enable_{name}"
