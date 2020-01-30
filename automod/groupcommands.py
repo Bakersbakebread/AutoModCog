@@ -289,7 +289,7 @@ def whitelistrole_show_wrapper(group, name, friendly_name):
         if all_roles:
             desc = ", ".join("`{0}`".format(role) for role in all_roles)
             em = discord.Embed(
-                title="Whitelisted roles", description=desc, color=discord.Color.greyple()
+                title="Whitelisted roles", description=desc, color=discord.Color.greyple(),
             )
             await ctx.send(embed=em)
         else:

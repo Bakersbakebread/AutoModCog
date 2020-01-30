@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from typing import Optional
+
 import discord
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -5,6 +8,18 @@ from datetime import datetime
 from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS, OPTIONS_MAP
 from async_lru import alru_cache
 import timeit
+
+
+@dataclass()
+class BaseRuleSettingsDisplay:
+    rule_name: str
+    guild_id: int
+    is_enabled: bool
+    action_to_take: str
+    is_deleting: bool
+    enforced_channels: Optional[list]
+    whitelisted_roles: Optional[list]
+    muted_role: Optional[str]
 
 
 class BaseRule:
@@ -17,6 +32,18 @@ class BaseRule:
     async def is_offensive(self, message: discord.Message):
         pass
 
+    async def get_settings(self, guild: discord.Guild) -> BaseRuleSettingsDisplay:
+        return BaseRuleSettingsDisplay(
+            rule_name=self.rule_name,
+            guild_id=guild.id,
+            is_enabled=await self.is_enabled(guild),
+            action_to_take=await self.get_action_to_take(guild),
+            is_deleting=await self.get_should_delete(guild),
+            enforced_channels=await self.get_enforced_channels(guild),
+            whitelisted_roles=await self.get_all_whitelisted_roles(guild),
+            muted_role=await self.get_mute_role(guild),
+        )
+
     async def _clear_cache(self, func):
         """Function helper to clear cache"""
         try:
@@ -27,12 +54,12 @@ class BaseRule:
 
     # enabling
     @alru_cache(maxsize=32)
-    async def is_enabled(self, guild: discord.Guild) -> bool or None:
+    async def is_enabled(self, guild: discord.Guild) -> bool:
         """Helper to return the status of Rule"""
         try:
             return await self.config.guild(guild).get_raw(self.rule_name, "is_enabled")
         except KeyError:
-            return None
+            return False
 
     async def toggle_enabled(self, guild: discord.Guild) -> (bool, bool):
         """Toggles whether the rule is in effect"""
@@ -185,6 +212,12 @@ class BaseRule:
         await self.config.guild(guild).set_raw(self.rule_name, "send_dm", value=(not before))
         return before, not before
 
+    async def get_mute_role(self, guild: discord.Guild) -> str or None:
+        try:
+            return await self.config.guild(guild).get_raw(self.rule_name, "role_to_add")
+        except KeyError:
+            return None
+
     async def set_mute_role(self, guild: discord.Guild, role: discord.Role) -> tuple:
 
         before = None
@@ -207,7 +240,7 @@ class BaseRule:
         return before_role, after_role
 
     async def get_announcement_embed(
-        self, message: discord.Message, message_has_been_deleted: bool, action_taken=None
+        self, message: discord.Message, message_has_been_deleted: bool, action_taken=None,
     ) -> discord.Embed:
         shortened_message_content = (
             (message.content[:120] + " .... (shortened)")
@@ -226,7 +259,7 @@ class BaseRule:
             val = f"`{action_taken}`"
             embed.add_field(name="Action Taken", value=val)
         embed.set_author(
-            name=f"{message.author} - {message.author.id}", icon_url=message.author.avatar_url
+            name=f"{message.author} - {message.author.id}", icon_url=message.author.avatar_url,
         )
         embed.timestamp = datetime.now()
         # embed.set_image(
@@ -241,7 +274,7 @@ class BaseRule:
             )
         else:
             embed.add_field(
-                name="Message status", value=f"`✅` Message has been deleted.", inline=False
+                name="Message status", value=f"`✅` Message has been deleted.", inline=False,
             )
         return embed
 
