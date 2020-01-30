@@ -10,13 +10,14 @@ from redbot.core.utils.chat_formatting import box
 
 from .rules.base import BaseRuleSettingsDisplay
 from .utils import transform_bool, error_message
-
+from .converters import ToggleBool
 log = logging.getLogger(name="red.breadcogs.automod")
 
 
 class Settings:
     def __init__(self, *args, **kwargs):
         self.bot = kwargs.get("bot")
+        self.config = kwargs.get('config')
         self.rules_map = kwargs.get("rules_map")
 
     async def set_announcement_channel(
@@ -47,21 +48,18 @@ class Settings:
 
         return enabled, channel
 
-    async def toggle_announcements(self, guild: discord.Guild):
-        before = None
+    async def toggle_announcements(self, guild: discord.Guild, toggle: ToggleBool):
+        before = False
         try:
             before = await self.config.guild(guild).get_raw("settings", "is_announcement_enabled")
         except KeyError:
             pass
 
-        if before is None:
-            before = True
-
         await self.config.guild(guild).set_raw(
-            "settings", "is_announcement_enabled", value=not before
+            "settings", "is_announcement_enabled", value=toggle
         )
 
-        return before, not before
+        return before, toggle
 
     async def get_all_settings(self, guild: discord.Guild) -> [discord.Embed]:
         settings = []
@@ -76,7 +74,6 @@ class Settings:
         return await rule.get_settings(guild)
 
     async def get_settings_to_embeds(self, settings: [BaseRuleSettingsDisplay]) -> [discord.Embed]:
-
         embeds = []
         setting: BaseRuleSettingsDisplay
         for setting in settings:
@@ -121,8 +118,7 @@ class Settings:
         setting: BaseRuleSettingsDisplay
         embed = discord.Embed(
             title="⚙ AutoMod settings",
-            description=f"For a more detailed view of an individual rule: `[p]automodset show <rule_name>`.\n"
-            f"Rule name is one of the headings below, leaving off the word 'rule'",
+            description=f"For a more detailed view of an individual rule: `[p]automodset show <rule_name>`.\n",
         )
         for index, setting in enumerate(settings, 1):
             value = "```diff\n"
@@ -146,7 +142,7 @@ class Settings:
             else "- No channel has been set up to receive announcements"
         )
 
-        embed.add_field(name="Announcing", value=box(announcing or "+ Disabled", "diff"))
+        embed.add_field(name="Announcing", value=box(announcing or "- Disabled", "diff"))
         if announcing:
             embed.add_field(name="Channel", value=box(where, "diff"))
         return [embed]
@@ -199,13 +195,22 @@ class Settings:
         """
         pass
 
-    @announce.command(name="enable")
+    @announce.command(name="toggle")
     @checks.mod_or_permissions(manage_messages=True)
-    async def _enable(self, ctx):
+    async def _enable(self, ctx, toggle: ToggleBool=None):
         """
-        Toggles sending announcement messages on infractions
+        Toggles sending announcement messages on infractions.
+
+
         """
-        before, after = await self.toggle_announcements(ctx.guild)
+        is_announcing, channel = await self.announcements_enabled(ctx.guild)
+        if toggle is None:
+            return await ctx.send(f"Announcing in this guild is `{transform_bool(is_announcing)}`.")
+
+        if is_announcing == toggle:
+            return await ctx.send(await error_message(f"Announcing is already `{transform_bool(is_announcing)}`"))
+
+        before, after = await self.toggle_announcements(ctx.guild, toggle)
 
         log.info(f"{ctx.author} ({ctx.author.id}) toggled announcements from {before} to {after}")
         await ctx.send(

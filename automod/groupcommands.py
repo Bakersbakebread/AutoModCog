@@ -2,6 +2,7 @@ import discord
 from redbot.core import commands, checks
 from .constants import *
 from .utils import *
+from .converters import ToggleBool
 
 groups = {
     "mentionspamrule": "Mention spam",
@@ -166,13 +167,20 @@ class GroupCommands:
 def enable_rule_wrapper(group, name, friendly_name):
     @group.command(name="toggle")
     @checks.mod_or_permissions(manage_messages=True)
-    async def enable_rule(self, ctx):
+    async def enable_rule(self, ctx, toggle: ToggleBool):
         """
         Toggle enabling/disabling this rule
 
         """
         rule = getattr(self, name)
-        before, after = await rule.toggle_enabled(ctx.guild)
+        is_enabled = await rule.is_enabled(ctx.guild)
+        if toggle is None:
+            return await ctx.send(f"{name} is `{transform_bool(is_enabled)}`.")
+
+        if is_enabled == toggle:
+            return await ctx.send(f"{name} is already `{transform_bool(is_enabled)}`")
+
+        before, after = await rule.toggle_enabled(ctx.guild, toggle)
         await ctx.send(
             f"**{friendly_name.title()}** set from `{transform_bool(before)}` to `{transform_bool(after)}`"
         )
@@ -343,9 +351,25 @@ def add_channel_wrapper(group, name, friendly_name):
 
     return add_channel
 
+def settings_wrapper(group, name, friendly_name):
+    @group.command(name="settings")
+    @checks.mod_or_permissions(manage_messages=True)
+    async def _invoke_settings(self, ctx):
+        """
+        Show settings for this rule
+        """
+        rule = getattr(self, name)
+        await ctx.invoke(self.bot.get_command(f"automodset show"), name)
+
+    return _invoke_settings
+
 
 for name, friendly_name in groups.items():
     group = getattr(GroupCommands, name)
+
+    settings = settings_wrapper(group, name, friendly_name)
+    settings.__name__ = f"settings_{name}"
+    setattr(GroupCommands, f"settings_{name}", settings)
 
     enable_rule = enable_rule_wrapper(group, name, friendly_name)
     enable_rule.__name__ = f"enable_{name}"
