@@ -5,6 +5,7 @@ import discord
 from abc import ABC, abstractmethod
 from datetime import datetime
 
+from cogs.CogManager.AutoModCog.automod.converters import ToggleBool
 from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS, OPTIONS_MAP
 from async_lru import alru_cache
 import timeit
@@ -61,16 +62,18 @@ class BaseRule:
         except KeyError:
             return False
 
-    async def toggle_enabled(self, guild: discord.Guild) -> (bool, bool):
+    async def toggle_enabled(self, guild: discord.Guild, toggle: ToggleBool) -> (bool, bool):
         """Toggles whether the rule is in effect"""
         await self._clear_cache(self.is_enabled)
+        before = False
         try:
             before = await self.config.guild(guild).get_raw(self.rule_name, "is_enabled")
-            await self.config.guild(guild).set_raw(self.rule_name, "is_enabled", value=not before)
-            return before, not before
         except KeyError:
-            await self.config.guild(guild).set_raw(self.rule_name, "is_enabled", value=True)
-            return False, True
+            pass
+
+        await self.config.guild(guild).set_raw(self.rule_name, "is_enabled", value=toggle)
+
+        return before, toggle
 
     async def set_enforced_channels(self, guild: discord.Guild, channels: [discord.TextChannel]):
         """Setting a channel will disable global"""

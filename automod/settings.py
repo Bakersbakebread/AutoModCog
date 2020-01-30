@@ -203,7 +203,6 @@ class Settings:
 
 
         """
-
         is_announcing, channel = await self.announcements_enabled(ctx.guild)
         if toggle is None:
             return await ctx.send(f"Announcing in this guild is `{transform_bool(is_announcing)}`.")
