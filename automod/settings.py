@@ -25,9 +25,7 @@ class Settings:
         """Sets the channel where announcements should be sent"""
         before_channel = None
         try:
-            before = await self.config.guild(guild).get_raw(
-                "settings", "announcement_channel"
-            )
+            before = await self.config.guild(guild).get_raw("settings", "announcement_channel")
             before_channel = guild.get_channel(before)
         except KeyError:
             pass
@@ -42,12 +40,8 @@ class Settings:
         enabled = False
         channel = None
         try:
-            enabled = await self.config.guild(guild).get_raw(
-                "settings", "is_announcement_enabled"
-            )
-            channel = await self.config.guild(guild).get_raw(
-                "settings", "announcement_channel"
-            )
+            enabled = await self.config.guild(guild).get_raw("settings", "is_announcement_enabled")
+            channel = await self.config.guild(guild).get_raw("settings", "announcement_channel")
         except KeyError:
             pass
 
@@ -56,9 +50,7 @@ class Settings:
     async def toggle_announcements(self, guild: discord.Guild):
         before = None
         try:
-            before = await self.config.guild(guild).get_raw(
-                "settings", "is_announcement_enabled"
-            )
+            before = await self.config.guild(guild).get_raw("settings", "is_announcement_enabled")
         except KeyError:
             pass
 
@@ -83,9 +75,7 @@ class Settings:
         rule = self.rules_map.get(rule_name)
         return await rule.get_settings(guild)
 
-    async def get_settings_to_embeds(
-        self, settings: [BaseRuleSettingsDisplay]
-    ) -> [discord.Embed]:
+    async def get_settings_to_embeds(self, settings: [BaseRuleSettingsDisplay]) -> [discord.Embed]:
 
         embeds = []
         setting: BaseRuleSettingsDisplay
@@ -156,9 +146,7 @@ class Settings:
             else "- No channel has been set up to receive announcements"
         )
 
-        embed.add_field(
-            name="Announcing", value=box(announcing or "+ Disabled", "diff")
-        )
+        embed.add_field(name="Announcing", value=box(announcing or "+ Disabled", "diff"))
         if announcing:
             embed.add_field(name="Channel", value=box(where, "diff"))
         return [embed]
@@ -219,9 +207,7 @@ class Settings:
         """
         before, after = await self.toggle_announcements(ctx.guild)
 
-        log.info(
-            f"{ctx.author} ({ctx.author.id}) toggled announcements from {before} to {after}"
-        )
+        log.info(f"{ctx.author} ({ctx.author.id}) toggled announcements from {before} to {after}")
         await ctx.send(
             f"`🔔` Announcements changed from `{transform_bool(before)}` to `{transform_bool(after)}`"
         )

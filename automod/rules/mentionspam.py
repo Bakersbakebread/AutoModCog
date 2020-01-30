@@ -37,15 +37,11 @@ class MentionSpamRule(BaseRule):
         guild = ctx.guild
         before = 4
         try:
-            before = await self.config.guild(guild).get_raw(
-                "settings", "mention_threshold"
-            )
+            before = await self.config.guild(guild).get_raw("settings", "mention_threshold")
         except KeyError:
             pass
 
-        await self.config.guild(guild).set_raw(
-            "settings", "mention_threshold", value=threshold
-        )
+        await self.config.guild(guild).set_raw("settings", "mention_threshold", value=threshold)
         log.info(
             f"{ctx.author} ({ctx.author.id}) changed mention threshold from {before} to {threshold}"
         )

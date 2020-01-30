@@ -16,12 +16,8 @@ class CooldownByContent(commands.CooldownMapping):
 
 class SpamChecker:
     def __init__(self):
-        self.by_content = CooldownByContent.from_cooldown(
-            15, 17.0, commands.BucketType.member
-        )
-        self.by_user = commands.CooldownMapping.from_cooldown(
-            10, 12.0, commands.BucketType.user
-        )
+        self.by_content = CooldownByContent.from_cooldown(15, 17.0, commands.BucketType.member)
+        self.by_user = commands.CooldownMapping.from_cooldown(10, 12.0, commands.BucketType.user)
 
     def is_spamming(self, message: discord.Message) -> bool:
         current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
