@@ -17,7 +17,9 @@ class MaxWordsRule(BaseRule):
 
     async def set_max_words_length(self, guild: discord.Guild, max_length: int):
         """Set the max words length into config - this overrides :)"""
-        await self.config.guild(guild).set_raw(self.rule_name, "max_words", value=max_length)
+        await self.config.guild(guild).set_raw(
+            self.rule_name, "max_words", value=max_length
+        )
 
     async def is_offensive(self, message: discord.Message):
         content = message.content.split()

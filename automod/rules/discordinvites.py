@@ -12,7 +12,9 @@ class DiscordInviteRule(BaseRule):
 
     async def get_allowed_links(self, guild: discord.Guild):
         try:
-            allowed_links = await self.config.guild(guild).get_raw(self.rule_name, "allowed_links")
+            allowed_links = await self.config.guild(guild).get_raw(
+                self.rule_name, "allowed_links"
+            )
         except KeyError:
             # no links have been added
             allowed_links = None
@@ -29,7 +31,9 @@ class DiscordInviteRule(BaseRule):
                 self.rule_name, "allowed_links", value=current_links
             )
         else:
-            await self.config.guild(guild).set_raw(self.rule_name, "allowed_links", value=[link])
+            await self.config.guild(guild).set_raw(
+                self.rule_name, "allowed_links", value=[link]
+            )
 
     async def delete_allowed_link(self, guild: discord.Guild, link: str):
         current_links = await self.get_allowed_links(guild)
@@ -48,7 +52,9 @@ class DiscordInviteRule(BaseRule):
 
         allowed_links = await self.get_allowed_links(guild)
 
-        r = re.compile("(https?:\/\/)?(www\.)?((discordapp\.com/invite)|(discord\.gg))\/(\w+)")
+        r = re.compile(
+            "(https?:\/\/)?(www\.)?((discordapp\.com/invite)|(discord\.gg))\/(\w+)"
+        )
 
         if allowed_links:
             filter_content = [x for x in content.split() if x not in allowed_links]

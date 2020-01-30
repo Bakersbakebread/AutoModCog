@@ -36,7 +36,9 @@ class GroupCommands:
         `The quick brown fox`
         """
         await self.maxwordsrule.set_max_words_length(ctx.guild, max_length)
-        await ctx.send(f"`💬` The maximum number of words in one message is set to `{max_length}`")
+        await ctx.send(
+            f"`💬` The maximum number of words in one message is set to `{max_length}`"
+        )
 
     # commands specific to maxchars
     @commands.group()
@@ -257,7 +259,9 @@ def whitelistrole_add_wrapper(group, name, friendly_name):
             await rule.append_whitelist_role(ctx.guild, role)
         except ValueError:
             await ctx.send(f"`{role}` is already whitelisted.", delete_after=30)
-            result = await yes_or_no(ctx, f"Would you like to remove `{role}` from the whitelist?")
+            result = await yes_or_no(
+                ctx, f"Would you like to remove `{role}` from the whitelist?"
+            )
             if result:
                 await rule.remove_whitelist_role(ctx.guild, role)
         await ctx.send(f"`{role}` added to the whitelist.")
@@ -289,7 +293,9 @@ def whitelistrole_show_wrapper(group, name, friendly_name):
         if all_roles:
             desc = ", ".join("`{0}`".format(role) for role in all_roles)
             em = discord.Embed(
-                title="Whitelisted roles", description=desc, color=discord.Color.greyple()
+                title="Whitelisted roles",
+                description=desc,
+                color=discord.Color.greyple(),
             )
             await ctx.send(embed=em)
         else:
@@ -333,7 +339,9 @@ def add_channel_wrapper(group, name, friendly_name):
             else:
                 return await ctx.send("Okay, no channels changed.")
         elif not channels:
-            return await ctx.send("Please send me which channels you would like to enforce.")
+            return await ctx.send(
+                "Please send me which channels you would like to enforce."
+            )
 
         enforcing = await rule.set_enforced_channels(ctx.guild, channels)
         enforcing_string = "\n".join(
@@ -366,7 +374,9 @@ for name, friendly_name in groups.items():
     setattr(GroupCommands, f"whitelistrole_{name}", whitelistrole)
 
     # whitelist group
-    whitelistrole_delete = whitelistrole_delete_wrapper(whitelistrole, name, friendly_name)
+    whitelistrole_delete = whitelistrole_delete_wrapper(
+        whitelistrole, name, friendly_name
+    )
     whitelistrole_delete.__name__ = f"whitelistrole_delete_{name}"
     setattr(GroupCommands, f"whitelistrole_delete_{name}", whitelistrole_delete)
 
