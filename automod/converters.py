@@ -1,7 +1,7 @@
 from redbot.core.commands import Converter, BadArgument
 from redbot.core.utils.chat_formatting import box
 
-from cogs.CogManager.AutoModCog.automod.utils import error_message
+from .utils import error_message
 
 
 class ToggleBool(Converter):
