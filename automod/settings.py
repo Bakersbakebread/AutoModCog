@@ -6,6 +6,8 @@ from redbot.core.commands import commands, CommandError, Converter, BadArgument
 from redbot.core import checks
 import logging
 
+from redbot.core.utils.chat_formatting import box
+
 from .rules.base import BaseRuleSettingsDisplay
 from .utils import transform_bool, error_message
 
@@ -128,6 +130,14 @@ class Settings:
             value += "```"
             embed.add_field(name=setting.rule_name,
                             value=value)
+
+        announcing, where = await self.announcements_enabled(guild)
+        announcing = '+ Enabled' if announcing else None
+        where = f"+ {guild.get_channel(where)}" if where else '- No channel has been set up to receive announcements'
+
+        embed.add_field(name="Announcing", value=box(announcing or '+ Disabled' , "diff"))
+        if announcing:
+            embed.add_field(name="Channel", value=box(where, "diff"))
         return [embed]
 
     async def get_rule_settings_as_embed(self, guild, rule_name):
