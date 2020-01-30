@@ -86,13 +86,25 @@ class Settings:
                 f"Action    :   {setting.action_to_take}  \n"
                 f"```"
             ))
+            if not setting.is_enabled:
+                embeds.append(embed)
+                continue
+
+            enforced_value = "`Global`"
             if setting.enforced_channels:
-                embed.add_field(name="Enforced Channels", value=", ".join(setting.enforced_channels))
+                enforced_value = ", ".join(setting.enforced_channels)
+
+            embed.add_field(name="Enforced Channels", value=enforced_value)
             if setting.whitelisted_roles:
                 roles = []
                 for r in setting.whitelisted_roles:
                     roles.append(guild.get_role(r).name)
-                embed.add_field(name="Whitelisted Roles", value=", ".join('`{0}`'.format(w) for w in roles))
+                whitelist_value = ", ".join('`{0}`'.format(w) for w in roles)
+            else:
+                whitelist_value = "No roles whitelisted."
+
+            embed.add_field(name="Whitelisted Roles", value=whitelist_value)
+
             if setting.muted_role:
                 embed.add_field(name="Muted role", value=", ".join(setting.muted_role))
             embeds.append(embed)
@@ -109,9 +121,9 @@ class Settings:
             else:
                 value += "- Disabled\n"
             if setting.is_deleting:
-                value += "+ Deleting\n\n"
+                value += "+ Deleting\n"
             else:
-                value += "- Not deleting\n\n"
+                value += "-Not deleting\n"
             value += f"---Action---\n{setting.action_to_take}"
             value += "```"
             embed.add_field(name=setting.rule_name,
@@ -130,11 +142,20 @@ class Settings:
     @commands.group()
     @checks.mod_or_permissions(manage_messages=True)
     async def automodset(self, ctx):
-        """Change the announcement settings"""
+        """
+        Change automod settings.
+        """
         pass
 
     @automodset.command(name="show", aliases=['all'])
     async def show_all_settings(self, ctx, rulename: str=None):
+        """
+        Show settings
+
+        If rulename is not provided a formatted embed will show all rules and their status.
+
+        For more granular details provide a rulename
+        """
         if rulename is None:
             for embed in await self.get_all_settings_as_embeds(ctx.guild):
                 await ctx.send(embed=embed)
