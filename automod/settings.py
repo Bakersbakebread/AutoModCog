@@ -115,7 +115,9 @@ class Settings:
     async def get_all_settings_as_embeds(self, guild):
         settings = await self.get_all_settings(guild)
         setting: BaseRuleSettingsDisplay
-        embed = discord.Embed(title="AutoMod settings")
+        embed = discord.Embed(title="⚙ AutoMod settings",
+                              description=f"For a more detailed view of an individual rule: `[p]automodset show <rule_name>`.\n"
+                              f"Rule name is one of the headings below, leaving off the word 'rule'")
         for index, setting in enumerate(settings, 1):
             value = "```diff\n"
             if setting.is_enabled:
