@@ -5,7 +5,7 @@ import discord
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from cogs.CogManager.AutoModCog.automod.converters import ToggleBool
+from ..converters import ToggleBool
 from ..constants import DEFAULT_ACTION, DEFAULT_OPTIONS, OPTIONS_MAP
 from async_lru import alru_cache
 import timeit
