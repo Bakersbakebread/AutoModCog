@@ -61,11 +61,13 @@ def docstring_parameter(*sub):
     """
     Convert docstring subs to have dynamic values, useful for showing error messages on commands
     """
+
     def dec(obj):
         obj.__doc__ = obj.__doc__.format(*sub)
         return obj
 
     return dec
+
 
 def transform_bool(is_enabled):
     return "Enabled" if is_enabled else "Disabled"

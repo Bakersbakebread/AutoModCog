@@ -25,7 +25,8 @@ class ToggleBool(Converter):
         if argument in self.available_no:
             return False
 
-
         raise BadArgument(
-            await error_message(f" `{argument}` is not valid. Allowed values are:\n{self.fmt_box}\n")
+            await error_message(
+                f" `{argument}` is not valid. Allowed values are:\n{self.fmt_box}\n"
+            )
         )

@@ -16,6 +16,7 @@ groups = {
 
 # thanks Jackenmen#6607 <3
 
+
 class GroupCommands:
 
     # commands specific to maxwords
@@ -163,16 +164,17 @@ class GroupCommands:
         else:
             await ctx.send(f"`❌` No links currently allowed.")
 
+
 def enable_rule_wrapper(group, name, friendly_name):
     @group.command(name="toggle")
     @checks.mod_or_permissions(manage_messages=True)
     @docstring_parameter(ToggleBool.fmt_box)
     async def enable_rule(self, ctx, toggle: ToggleBool):
-        '''
+        """
         Enable or disable this rule
 
         {0}
-        '''
+        """
         rule = getattr(self, name)
         is_enabled = await rule.is_enabled(ctx.guild)
         if toggle is None:
@@ -185,6 +187,7 @@ def enable_rule_wrapper(group, name, friendly_name):
         await ctx.send(
             f"**{friendly_name.title()}** set from `{transform_bool(before)}` to `{transform_bool(after)}`"
         )
+
     return enable_rule
 
 
