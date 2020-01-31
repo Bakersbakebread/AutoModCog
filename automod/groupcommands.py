@@ -12,9 +12,6 @@ groups = {
     "maxwordsrule": "maximum words",
     "maxcharsrule": "maximum characters",
 }
-from .converters import ToggleBool
-available_yes = ", ".join(ToggleBool.available_yes)
-available_no = ", ".join(ToggleBool.available_no)
 
 
 # thanks Jackenmen#6607 <3
