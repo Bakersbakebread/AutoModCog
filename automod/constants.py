@@ -8,7 +8,7 @@ ACTION_CONFIRMATION = {
     "ban": "On detection I will ban the offender",
 }
 
-DEFAULT_ACTION = "kick"
+DEFAULT_ACTION = "third_party"
 
 DEFAULT_OPTIONS = {
     "role_to_add": None,
@@ -17,9 +17,9 @@ DEFAULT_OPTIONS = {
     "whitelist_roles": [],
     "whitelist_users": [],
     "action_to_take": DEFAULT_ACTION,
-    "is_enabled": True,
-    "delete_message": True,
-    "send_dm": True,
+    "is_enabled": False,
+    "delete_message": False,
+    "send_dm": False,
 }
 
 OPTIONS_MAP = {
