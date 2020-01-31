@@ -11,13 +11,14 @@ from redbot.core.utils.chat_formatting import box
 from .rules.base import BaseRuleSettingsDisplay
 from .utils import transform_bool, error_message
 from .converters import ToggleBool
+
 log = logging.getLogger(name="red.breadcogs.automod")
 
 
 class Settings:
     def __init__(self, *args, **kwargs):
         self.bot = kwargs.get("bot")
-        self.config = kwargs.get('config')
+        self.config = kwargs.get("config")
         self.rules_map = kwargs.get("rules_map")
 
     async def set_announcement_channel(
@@ -55,9 +56,7 @@ class Settings:
         except KeyError:
             pass
 
-        await self.config.guild(guild).set_raw(
-            "settings", "is_announcement_enabled", value=toggle
-        )
+        await self.config.guild(guild).set_raw("settings", "is_announcement_enabled", value=toggle)
 
         return before, toggle
 
@@ -198,7 +197,7 @@ class Settings:
 
     @announce.command(name="toggle")
     @checks.mod_or_permissions(manage_messages=True)
-    async def _enable(self, ctx, toggle: ToggleBool=None):
+    async def _enable(self, ctx, toggle: ToggleBool = None):
         """
         Toggles sending announcement messages on infractions.
 
@@ -206,10 +205,14 @@ class Settings:
         """
         is_announcing, channel = await self.announcements_enabled(ctx.guild)
         if toggle is None:
-            return await ctx.send(f"Announcing in this guild is `{transform_bool(is_announcing)}`.")
+            return await ctx.send(
+                f"Announcing in this guild is `{transform_bool(is_announcing)}`."
+            )
 
         if is_announcing == toggle:
-            return await ctx.send(await error_message(f"Announcing is already `{transform_bool(is_announcing)}`"))
+            return await ctx.send(
+                await error_message(f"Announcing is already `{transform_bool(is_announcing)}`")
+            )
 
         before, after = await self.toggle_announcements(ctx.guild, toggle)
 
