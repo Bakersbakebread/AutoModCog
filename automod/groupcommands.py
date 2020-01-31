@@ -211,11 +211,19 @@ def action_to_take__wrapper(group, name, friendly_name):
             f":five: Ban offender",
         )
         action = await get_option_reaction(ctx, embed=embed)
-        if action:
-            await ctx.send(await thumbs_up_success(ACTION_CONFIRMATION[action]))
-            await rule.set_action_to_take(action, ctx.guild)
-        else:
-            await ctx.send("Okay, nothing's changed.")
+        if not action:
+            return await ctx.send('Okay. Nothings changed.')
+
+        await ctx.send(await thumbs_up_success(ACTION_CONFIRMATION[action]))
+        if action == 'add_role':
+            mute_role = await rule.get_mute_role(ctx.guild)
+            if mute_role is None:
+                await ctx.send(await error_message(
+                    f"There is no role set. Add one with: `{ctx.prefix}{name} role <role>`"
+                )
+                )
+        await rule.set_action_to_take(action, ctx.guild)
+
 
     return action_to_take
 
