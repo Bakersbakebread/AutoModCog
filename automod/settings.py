@@ -2,14 +2,14 @@ import asyncio
 from typing import Optional, Union
 
 import discord
-from redbot.core.commands import commands, CommandError, Converter, BadArgument
+from redbot.core.commands import commands
 from redbot.core import checks
 import logging
 
 from redbot.core.utils.chat_formatting import box
 
 from .rules.base import BaseRuleSettingsDisplay
-from .utils import transform_bool, error_message
+from .utils import transform_bool, error_message, docstring_parameter
 from .converters import ToggleBool
 
 log = logging.getLogger(name="red.breadcogs.automod")
@@ -197,18 +197,14 @@ class Settings:
 
     @announce.command(name="toggle")
     @checks.mod_or_permissions(manage_messages=True)
-    async def _enable(self, ctx, toggle: ToggleBool = None):
+    @docstring_parameter(ToggleBool.fmt_box)
+    async def _enable(self, ctx, toggle: ToggleBool):
         """
         Toggles sending announcement messages on infractions.
 
-
+        {0}
         """
         is_announcing, channel = await self.announcements_enabled(ctx.guild)
-        if toggle is None:
-            return await ctx.send(
-                f"Announcing in this guild is `{transform_bool(is_announcing)}`."
-            )
-
         if is_announcing == toggle:
             return await ctx.send(
                 await error_message(f"Announcing is already `{transform_bool(is_announcing)}`")
