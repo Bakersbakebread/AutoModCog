@@ -139,7 +139,7 @@ class BaseRule:
         try:
             return await self.config.guild(guild).get_raw(self.rule_name, "delete_message")
         except KeyError:
-            return True
+            return False
 
     async def toggle_to_delete_message(self, guild: discord.Guild) -> (bool, bool):
         """Toggles whether offending message should be deleted"""

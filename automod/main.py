@@ -28,7 +28,7 @@ class AutoMod(Cog, Settings, GroupCommands):
         self.config = Config.get_conf(self, identifier=78945698745687, force_registration=True)
 
         self.guild_defaults = {
-            "settings": {"announcement_channel": None, "is_announcement_enabled": True},
+            "settings": {"announcement_channel": None, "is_announcement_enabled": False},
             WallSpamRule.__class__.__name__: DEFAULT_OPTIONS,
             MentionSpamRule.__class__.__name__: DEFAULT_OPTIONS,
             DiscordInviteRule.__class__.__name__: DEFAULT_OPTIONS,
