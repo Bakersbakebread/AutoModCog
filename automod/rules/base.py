@@ -243,8 +243,11 @@ class BaseRule:
         return before_role, after_role
 
     async def get_announcement_embed(
-        self, message: discord.Message, message_has_been_deleted: bool, action_taken_success: bool,
-            action_taken=None,
+        self,
+        message: discord.Message,
+        message_has_been_deleted: bool,
+        action_taken_success: bool,
+        action_taken=None,
     ) -> discord.Embed:
         shortened_message_content = (
             (message.content[:120] + " .... (shortened)")
@@ -293,6 +296,3 @@ class BaseRule:
         embed = discord.Embed(title=f"{self.rule_name} settings", description=desc)
 
         return embed
-
-
-
