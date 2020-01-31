@@ -81,26 +81,14 @@ class AutoMod(Cog, Settings, GroupCommands):
                 log.warning(
                     f"[AutoMod] {rule.rule_name} - Could not delete message as it does not exist"
                 )
-
-        if should_announce:
-            if announce_channel is not None:
-                announce_embed = await rule.get_announcement_embed(
-                    message, message_has_been_deleted, action_to_take
-                )
-                announce_channel_obj = guild.get_channel(announce_channel)
-                await announce_channel_obj.send(embed=announce_embed)
-
-        if action_to_take == "third_party":
-            # do nothing but we still fire the event
-            # so other devs can hook onto custom mod cogs for example
-            return
-
-        elif action_to_take == "kick":
+        action_taken_success = True
+        if action_to_take == "kick":
             try:
                 await author.kick(reason=_action_reason)
                 log.info(f"{rule.rule_name} - Kicked {author} ({author.id})")
             except discord.errors.Forbidden:
                 log.warning(f"{rule.rule_name} - Failed to kick user, missing permissions")
+                action_taken_success = False
 
         elif action_to_take == "add_role":
             try:
@@ -112,7 +100,7 @@ class AutoMod(Cog, Settings, GroupCommands):
             except KeyError:
                 # role to add not set
                 log.info(f"{rule.rule_name} No role set to add to offending user")
-                pass
+                action_taken_success = False
 
         elif action_to_take == "ban":
             try:
@@ -120,8 +108,18 @@ class AutoMod(Cog, Settings, GroupCommands):
                 log.info(f"{rule.rule_name} - Banned {author} ({author.id})")
             except discord.errors.Forbidden:
                 log.warning(f"{rule.rule_name} - Failed to ban user, missing permissions")
+                action_taken_success = False
             except discord.errors.HTTPException:
                 log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
+                action_taken_success = False
+
+        if should_announce:
+            if announce_channel is not None:
+                announce_embed = await rule.get_announcement_embed(
+                    message, message_has_been_deleted, action_taken_success, action_to_take
+                )
+                announce_channel_obj = guild.get_channel(announce_channel)
+                await announce_channel_obj.send(embed=announce_embed)
 
     @Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
