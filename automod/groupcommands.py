@@ -281,6 +281,7 @@ def whitelistrole_delete_wrapper(group, name, friendly_name):
         rule = getattr(self, name)
         try:
             await rule.remove_whitelist_role(ctx.guild, role)
+            return await ctx.send(f"Removed `{role}` from the whitelist.")
         except ValueError:
             return await ctx.send(f"`{role}` is not whitelisted.")
 
