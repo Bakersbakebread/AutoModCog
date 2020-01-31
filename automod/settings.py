@@ -109,7 +109,8 @@ class Settings:
             embed.add_field(name="Whitelisted Roles", value=whitelist_value)
 
             if setting.muted_role:
-                embed.add_field(name="Muted role", value=", ".join(setting.muted_role))
+                role = guild.get_role(setting.muted_role)
+                embed.add_field(name="Muted role", value=f"`{role}`", inline=False)
             embeds.append(embed)
         return embeds
 
