@@ -5,12 +5,12 @@ from .utils import *
 from .converters import ToggleBool
 
 groups = {
-    "mentionspamrule": "Mention spam",
-    "wallspamrule": "Wall spam",
-    "inviterule": "Discord invites",
-    "spamrule": "General spam",
-    "maxwordsrule": "Maximum words",
-    "maxcharsrule": "Maximum characters",
+    "mentionspamrule": "mention spam",
+    "wallspamrule": "wall spam",
+    "inviterule": "discord invites",
+    "spamrule": "general spam",
+    "maxwordsrule": "maximum words",
+    "maxcharsrule": "maximum characters",
 }
 
 # thanks Jackenmen#6607 <3
@@ -203,7 +203,7 @@ def action_to_take__wrapper(group, name, friendly_name):
         """
         rule = getattr(self, name)
         embed = discord.Embed(
-            title="What action should be taken against wallspam?",
+            title=f"What action should be taken against {friendly_name}?",
             description=f":one: Nothing (still fires event for third-party integration)\n"
             f":two: DM a role\n"
             f":three: Add a role to offender (Mute role for example)\n"
