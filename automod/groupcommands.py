@@ -409,5 +409,5 @@ for name, friendly_name in groups.items():
     setattr(GroupCommands, f"add_role_{name}", add_role)
 
     add_channel = add_channel_wrapper(group, name, friendly_name)
-    add_channel.__name__ = f"add_role_{name}"
-    setattr(GroupCommands, f"add_role_{name}", add_channel)
+    add_channel.__name__ = f"add_channel_{name}"
+    setattr(GroupCommands, f"add_channel_{name}", add_channel)
