@@ -1,5 +1,6 @@
 import discord
 from .base import BaseRule
+import re
 
 from ..utils import *
 import logging
@@ -16,7 +17,7 @@ class WordFilterRule(BaseRule):
         self,
         guild: discord.Guild,
         word: str,
-        channel: discord.TextChannel = None,
+        channels: [discord.TextChannel] = None,
         is_cleaned: bool = False,
     ) -> None:
         """
@@ -39,7 +40,11 @@ class WordFilterRule(BaseRule):
         -------
         None
         """
-        to_append = {word: {"is_cleaned": is_cleaned, "channel": channel.id if channel else None}}
+        to_append = {
+            "word": word,
+            "is_cleaned": is_cleaned,
+            "channel": [channel.id for channel in channels] if channels else []
+        }
         try:
             words = await self.config.guild(guild).get_raw(self.rule_name, "words")
             words.append(to_append)
@@ -59,8 +64,7 @@ class WordFilterRule(BaseRule):
 
         Returns
         -------
-        A list of dicts:
-            { `word`: { "is cleaned" : `bool`, "channel": `discord.TextChannel` }
+        A list of dicts
         """
         try:
             words = await self.config.guild(guild).get_raw(self.rule_name, "words")
@@ -68,5 +72,35 @@ class WordFilterRule(BaseRule):
         except KeyError:
             return []
 
+    @staticmethod
+    def remove_punctuation(sentence: str):
+        from string import punctuation
+        no_punc = sentence.translate(str.maketrans('', '', punctuation))
+        return no_punc
+
+    @staticmethod
+    def no_mentions(sentence: str):
+        mentionless = re.sub(r"<@!?(\d+)>", "", sentence)
+        return mentionless
+
+    async def is_filtered(self, sentence: str, filtered_words: [dict]):
+        for word in filtered_words:
+            to_filter = word['word']
+            is_cleaned = word['is_cleaned']
+
+            if is_cleaned:
+                sentence = self.remove_punctuation(sentence)
+
+            if to_filter in sentence:
+                return True
+
+        return False
+
     async def is_offensive(self, message: discord.Message):
-        pass
+        all_words = await self.get_filtered_words(message.guild)
+        sentence = self.no_mentions(message.content)
+
+        for word in all_words:
+            channels = word['channel']
+            if message.channel.id in channels or channels is None:
+                return await self.is_filtered(sentence, all_words)

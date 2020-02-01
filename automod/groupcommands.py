@@ -1,4 +1,5 @@
 import discord
+from discord.ext.commands import Greedy
 from redbot.core import commands, checks
 from redbot.core.utils.chat_formatting import box
 
@@ -37,7 +38,7 @@ class GroupCommands:
     @wordfilterrule.command(name="add")
     @checks.mod_or_permissions(manage_messages=True)
     async def add_word_to_filter(
-        self, ctx, word: str, channel: discord.TextChannel = None, is_cleaned: bool = False
+        self, ctx, word: str, channels: Greedy[discord.TextChannel] = None, is_cleaned: bool = False
     ):
         """Add a word to the list of forbidden words
 
@@ -46,19 +47,26 @@ class GroupCommands:
         """
         word = word.lower()
         current_filtered = await self.wordfilterrule.get_filtered_words(ctx.guild)
-        for obj in current_filtered:
-            if word in obj:
+        for values in current_filtered:
+            if word in values['word']:
                 return await ctx.send(await error_message(f"`{word}` is already being filtered."))
         await self.wordfilterrule.add_to_filter(
-            guild=ctx.guild, word=word, channel=channel, is_cleaned=is_cleaned
+            guild=ctx.guild, word=word, channels=channels, is_cleaned=is_cleaned
         )
+
+        nl = "\n"
+        chans = nl.join('+ {0}'.format(w) for w in channels) if channels else '+ Global'
         fmt_box = box(
             f"Word       :  [{word}]\n"
-            f"Channel    :  [{channel}]\n"
-            f"Cleaned    :  [{is_cleaned}]",
-            "ini",
+            f"Cleaned    :  [{is_cleaned}]\n",
+            "ini"
         )
-        return await ctx.send(check_success(f"Word added.\n{fmt_box}"))
+        embed = discord.Embed(
+            title=f"Word added",
+            description=f"You can remove this word from the filter by running the command: `{ctx.prefix}wordfilterrule remove {word}`")
+        embed.add_field(name="Word details", value=fmt_box)
+        embed.add_field(name="Channels", value=box(chans, "diff"))
+        return await ctx.send(embed=embed)
 
     # commands specific to maxwords
     @commands.group()
