@@ -6,42 +6,56 @@ from ..utils import *
 
 
 class DiscordInviteRule(BaseRule):
-    def __init__(self, config):
+    def __init__(
+        self, config,
+    ):
         super().__init__(config)
         self.name = "discordinvite"
 
-    async def get_allowed_links(self, guild: discord.Guild):
+    async def get_allowed_links(
+        self, guild: discord.Guild,
+    ):
         try:
-            allowed_links = await self.config.guild(guild).get_raw(self.rule_name, "allowed_links")
+            allowed_links = await self.config.guild(guild).get_raw(
+                self.rule_name, "allowed_links",
+            )
         except KeyError:
             # no links have been added
             allowed_links = None
 
         return allowed_links
 
-    async def add_allowed_link(self, guild: discord.Guild, link: str):
+    async def add_allowed_link(
+        self, guild: discord.Guild, link: str,
+    ):
         current_links = await self.get_allowed_links(guild)
         if current_links is not None:
             if link in current_links:
                 raise ValueError("Link already exists.")
             current_links.append(link)
             await self.config.guild(guild).set_raw(
-                self.rule_name, "allowed_links", value=current_links
+                self.rule_name, "allowed_links", value=current_links,
             )
         else:
-            await self.config.guild(guild).set_raw(self.rule_name, "allowed_links", value=[link])
+            await self.config.guild(guild).set_raw(
+                self.rule_name, "allowed_links", value=[link],
+            )
 
-    async def delete_allowed_link(self, guild: discord.Guild, link: str):
+    async def delete_allowed_link(
+        self, guild: discord.Guild, link: str,
+    ):
         current_links = await self.get_allowed_links(guild)
         if current_links is None or link not in current_links:
             raise ValueError("Link provided is not in the allowed list.")
 
         current_links.pop(link)
         await self.config.guild(guild).set_raw(
-            self.rule_name, "allowed_links", value=current_links
+            self.rule_name, "allowed_links", value=current_links,
         )
 
-    async def is_offensive(self, message: discord.Message):
+    async def is_offensive(
+        self, message: discord.Message,
+    ):
         author = message.author
         guild = message.guild
         content = message.content
@@ -55,7 +69,7 @@ class DiscordInviteRule(BaseRule):
         else:
             filter_content = content.split()
 
-        has_offensive = list(filter(r.match, filter_content))
+        has_offensive = list(filter(r.match, filter_content,))
 
         if has_offensive:
             return True

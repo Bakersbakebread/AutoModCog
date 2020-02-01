@@ -1,5 +1,7 @@
 import discord
 from redbot.core import commands, checks
+from redbot.core.utils.chat_formatting import box
+
 from .constants import *
 from .utils import *
 from .converters import ToggleBool
@@ -11,6 +13,7 @@ groups = {
     "spamrule": "general spam",
     "maxwordsrule": "maximum words",
     "maxcharsrule": "maximum characters",
+    "wordfilterrule": "word filter",
 }
 
 
@@ -18,6 +21,44 @@ groups = {
 
 
 class GroupCommands:
+
+    # commands specific to filterword
+    @commands.group()
+    @checks.mod_or_permissions(manage_messages=True)
+    async def wordfilterrule(self, ctx):
+        """
+        Detects if a word matches list of forbidden words.
+
+        This has an optional attribute of `is_cleaned` which will attempt to remove all punctuation from the word
+        in sentence. This can aid against people attempting to evade, example: `f.ilte.red`
+        """
+        pass
+
+    @wordfilterrule.command(name="add")
+    @checks.mod_or_permissions(manage_messages=True)
+    async def add_word_to_filter(
+        self, ctx, word: str, channel: discord.TextChannel = None, is_cleaned: bool = False
+    ):
+        """Add a word to the list of forbidden words
+
+        `word`: the word to add to the filter
+        `is_cleaned`: an optional True/False argument that will remove punctuation from the word
+        """
+        word = word.lower()
+        current_filtered = await self.wordfilterrule.get_filtered_words(ctx.guild)
+        for obj in current_filtered:
+            if word in obj:
+                return await ctx.send(await error_message(f"`{word}` is already being filtered."))
+        await self.wordfilterrule.add_to_filter(
+            guild=ctx.guild, word=word, channel=channel, is_cleaned=is_cleaned
+        )
+        fmt_box = box(
+            f"Word       :  [{word}]\n"
+            f"Channel    :  [{channel}]\n"
+            f"Cleaned    :  [{is_cleaned}]",
+            "ini",
+        )
+        return await ctx.send(check_success(f"Word added.\n{fmt_box}"))
 
     # commands specific to maxwords
     @commands.group()

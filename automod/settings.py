@@ -2,7 +2,7 @@ import asyncio
 from typing import Optional, Union
 
 import discord
-from redbot.core.commands import commands
+from redbot.core.commands import commands, Greedy
 from redbot.core import checks
 import logging
 
@@ -142,7 +142,9 @@ class Settings:
             else "- No channel has been set up to receive announcements"
         )
 
-        embed.add_field(name="Announcing", value=box(announcing or "- Disabled", "diff"))
+        embed.add_field(
+            name="Announcing", value=box(announcing or "- Disabled", "diff"), inline=False
+        )
         if announcing:
             embed.add_field(name="Channel", value=box(where, "diff"))
         return [embed]
@@ -155,6 +157,49 @@ class Settings:
         except KeyError:
             return None
 
+    async def get_channel_groups(self, guild: discord.Guild) -> [dict]:
+        """
+        Get all the channel groups for supplied guild
+        Parameters
+        ----------
+        guild: discord.Guild
+            The guild to fetch data from config with
+
+        Returns
+        -------
+        [dict]
+            { group_name: [channel_ids] }
+        """
+        settings = await self.config.guild(guild).settings()
+        return settings.get("channel_groups", [])
+
+    async def set_new_channel_group(
+        self, guild: discord.Guild, group_name: str, channels: [discord.TextChannel]
+    ) -> None:
+        """
+        Create a new channel group and add it config
+        Parameters
+        ----------
+        guild: discord.Guild
+            The guild this group belongs too
+        group_name: str
+            The group name
+        channels: [discord.TextChannel]
+            A list of discord.Textchannels to add to the group
+
+        Returns
+        -------
+            None
+        """
+        all_groups = await self.get_channel_groups(guild)
+        for group in all_groups:
+            if group_name in group:
+                raise ValueError(f"That group already exists.")
+
+        to_append = {group_name.lower(): [ch.id for ch in channels]}
+        all_groups.append(to_append)
+        await self.config.guild(guild).set_raw("settings", "channel_groups", value=all_groups)
+
     @commands.group()
     @checks.mod_or_permissions(manage_messages=True)
     async def automodset(self, ctx):
@@ -162,6 +207,36 @@ class Settings:
         Change automod settings.
         """
         pass
+
+    @automodset.group(name="channelgroup", aliases=["group", "chgroup"])
+    async def channel_group(self, ctx):
+        """
+        Channel group settings
+
+        A channel group is a group of channels that share a "key".
+        """
+        pass
+
+    @channel_group.command(name="add", aliases=["create"])
+    async def _add_new_group(self, ctx, group_name: str, channels: Greedy[discord.TextChannel]):
+        """
+        Add a new channel group
+
+        Group name bust be one word, `-`, `_` are permitted.
+        """
+        try:
+            await self.set_new_channel_group(ctx.guild, group_name, channels)
+            nl = "\n"
+            fmt_box = box("\n".join("+ {0}".format(ch.name) for ch in channels), "diff")
+            em = discord.Embed(
+                title="Channel group added",
+                color=discord.Color.green(),
+                description=f"Successfully added group with the key of `{group_name}`.",
+            )
+            em.add_field(name="Channels in group", value=fmt_box)
+            return await ctx.send(embed=em)
+        except ValueError as e:
+            return await ctx.send(await error_message(e.args[0]))
 
     @automodset.command(name="show", aliases=["all"])
     async def show_all_settings(self, ctx, rulename: str = None):
