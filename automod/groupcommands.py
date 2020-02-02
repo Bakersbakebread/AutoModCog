@@ -2,6 +2,7 @@ import discord
 from discord.ext.commands import Greedy
 from redbot.core import commands, checks
 from redbot.core.utils.chat_formatting import box
+from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
 from .constants import *
 from .utils import *
@@ -47,9 +48,49 @@ class GroupCommands:
         return await ctx.send(check_success(f"`{word}` has been removed from the list of filtered words."))
 
     @wordfilterrule.command(name="list")
-    async def _show_all_filtered_words(self, ctx):
-        """Show all the filtered words"""
+    async def _show_all_filtered_words(self, ctx, word: str = None):
+        """
+        Show all the filtered words
 
+        `word` adding a word parameter will show information about a single word."""
+        current_filtered = await self.wordfilterrule.get_filtered_words(ctx.guild)
+        if not word:
+            amount_filtered = len(current_filtered)
+            channels_filtering = [x['channel'] for x in current_filtered]
+            channels_filtering = len(channels_filtering)
+            chunked = chunks(current_filtered, 6)
+            embeds = []
+            for chunk in chunked:
+                embed = discord.Embed(
+                    title="Filtered words",
+                    description=f"To show information about a single rule: `{ctx.prefix}{ctx.command} <word>`")
+                embed.set_footer(text=f"Filtering {amount_filtered} words across {channels_filtering} channels")
+                for word in chunk:
+                    channels = word['channel']
+                    chans = "\n".join('#{0}'.format(ctx.guild.get_channel(w)) for w in channels) if channels else '[Global]'
+                    embed.add_field(name=word['word'],
+                                    value=box(f"Cleaned: [{word['is_cleaned']}]\n\n"
+                                          f"Channels\n"
+                                          f"---\n"
+                                          f"{chans}", "ini"))
+
+                embeds.append(embed)
+            return await menu(ctx, embeds, DEFAULT_CONTROLS)
+        else:
+            try:
+                current_word = [x for x in current_filtered if x['word'] == word.lower()][0]
+                channels = current_word['channel']
+                chans = "\n".join('#{0}'.format(ctx.guild.get_channel(w)) for w in channels) if channels else '[Global]'
+                embed = discord.Embed(title="Word filtering",
+                                      description=box(
+                                          f"Word    : [{current_word['word']}]\n"
+                                          f"Cleaned : [{current_word['is_cleaned']}]\n\n"
+                                          f"Channels\n"
+                                          f"---\n"
+                                          f"{chans}", "ini"))
+                return await ctx.send(embed=embed)
+            except IndexError:
+                return await ctx.send(await error_message(f"`{word}` is not being filtered."))
 
     @wordfilterrule.group(name="add")
     @checks.mod_or_permissions(manage_messages=True)

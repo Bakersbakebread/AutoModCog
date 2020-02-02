@@ -15,9 +15,7 @@ class WordFilterRule(BaseRule):
 
     async def add_to_filter(
         self,
-        guild: discord.Guild,
-        word: str,
-        channels: [discord.TextChannel] = None,
+        guild: discord.Guild, word: str, author: discord.Member, channels: [discord.TextChannel] = None,
         is_cleaned: bool = False,
     ) -> None:
         """
