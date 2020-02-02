@@ -9,7 +9,7 @@ import logging
 from redbot.core.utils.chat_formatting import box
 
 from .rules.base import BaseRuleSettingsDisplay
-from .utils import transform_bool, error_message, docstring_parameter
+from .utils import transform_bool, error_message, docstring_parameter, chunk_list, chunk_dict
 from .converters import ToggleBool
 
 log = logging.getLogger(name="red.breadcogs.automod")
@@ -235,6 +235,13 @@ class Settings:
             return await ctx.send(embed=em)
         except ValueError as e:
             return await ctx.send(await error_message(e.args[0]))
+
+    @channel_group.command(name="show", aliases=['list'])
+    async def show_all_groups(self, ctx):
+        groups = await self.get_channel_groups(ctx.guild)
+        groups_chunked = chunk_dict(groups, 3)
+        for index, group in enumerate(groups_chunked):
+            await ctx.send(f"Group index: {index}\n{group}")
 
     @automodset.command(name="show", aliases=["all"])
     async def show_all_settings(self, ctx, rulename: str = None):

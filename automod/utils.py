@@ -2,7 +2,7 @@ import discord
 
 from redbot.core.utils.predicates import ReactionPredicate
 from redbot.core.utils.menus import start_adding_reactions
-
+from itertools import islice
 
 async def maybe_add_role(
     user: discord.Member, role: discord.Role,
@@ -16,10 +16,16 @@ async def maybe_add_role(
     )
 
 
-def chunks(l, n):
+def chunk_list(l, n):
     # looping till length l
     for i in range(0, len(l), n):
         yield l[i:i + n]
+
+
+def chunk_dict(data, size):
+    it = iter(data)
+    for i in range(0, len(data), size):
+        yield {k: data[k] for k in islice(it, size)}
 
 
 async def thumbs_up_success(message: str,):

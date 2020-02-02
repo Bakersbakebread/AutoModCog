@@ -62,7 +62,7 @@ class GroupCommands:
             amount_filtered = len(current_filtered)
             channels_filtering = [x['channel'] for x in current_filtered]
             channels_filtering = len(channels_filtering)
-            chunked = chunks(current_filtered, 4)
+            chunked = chunk_list(current_filtered, 4)
             embeds = []
             for chunk in chunked:
                 embed = discord.Embed(
