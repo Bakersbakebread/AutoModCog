@@ -46,6 +46,11 @@ class GroupCommands:
         await self.wordfilterrule.remove_filter(ctx.guild, word)
         return await ctx.send(check_success(f"`{word}` has been removed from the list of filtered words."))
 
+    @wordfilterrule.command(name="list")
+    async def _show_all_filtered_words(self, ctx):
+        """Show all the filtered words"""
+
+
     @wordfilterrule.group(name="add")
     @checks.mod_or_permissions(manage_messages=True)
     async def add_word_to_filter(self, ctx):
