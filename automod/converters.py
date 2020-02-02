@@ -1,12 +1,29 @@
-from redbot.core.commands import Converter, BadArgument
+from redbot.core.commands import (
+    Converter,
+    BadArgument,
+)
 from redbot.core.utils.chat_formatting import box
 
 from .utils import error_message
 
 
 class ToggleBool(Converter):
-    available_yes = ["y", "yes", "yeh", "true", "enable", "activate"]
-    available_no = ["n", "no", "nah", "false", "disable", "deactivate"]
+    available_yes = [
+        "y",
+        "yes",
+        "yeh",
+        "true",
+        "enable",
+        "activate",
+    ]
+    available_no = [
+        "n",
+        "no",
+        "nah",
+        "false",
+        "disable",
+        "deactivate",
+    ]
     fmt_box = box(
         f"+ To enable\n"
         f"{', '.join(available_yes)}\n\n"
@@ -16,7 +33,9 @@ class ToggleBool(Converter):
         "diff",
     )
 
-    async def convert(self, ctx, argument):
+    async def convert(
+        self, ctx, argument,
+    ):
         argument = argument.lower()
 
         if argument in self.available_yes:

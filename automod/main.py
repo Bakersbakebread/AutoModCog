@@ -4,6 +4,7 @@ import logging
 from redbot.core.commands import Cog
 from redbot.core import Config
 
+from .rules.wordfilter import WordFilterRule
 from .rules.wallspam import WallSpamRule
 from .rules.mentionspam import MentionSpamRule
 from .rules.discordinvites import DiscordInviteRule
@@ -20,15 +21,21 @@ from .utils import maybe_add_role
 log = logging.getLogger(name="red.breadcogs.automod")
 
 
-class AutoMod(Cog, Settings, GroupCommands):
-    def __init__(self, bot, *args, **kwargs):
+class AutoMod(
+    Cog, Settings, GroupCommands,
+):
+    def __init__(
+        self, bot, *args, **kwargs,
+    ):
 
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            *args, **kwargs,
+        )
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=78945698745687, force_registration=True)
+        self.config = Config.get_conf(self, identifier=78945698745687, force_registration=True,)
 
         self.guild_defaults = {
-            "settings": {"announcement_channel": None, "is_announcement_enabled": False},
+            "settings": {"announcement_channel": None, "is_announcement_enabled": False,},
             WallSpamRule.__class__.__name__: DEFAULT_OPTIONS,
             MentionSpamRule.__class__.__name__: DEFAULT_OPTIONS,
             DiscordInviteRule.__class__.__name__: DEFAULT_OPTIONS,
@@ -43,6 +50,7 @@ class AutoMod(Cog, Settings, GroupCommands):
         self.spamrule = SpamRule(self.config)
         self.maxwordsrule = MaxWordsRule(self.config)
         self.maxcharsrule = MaxCharsRule(self.config)
+        self.wordfilterrule = WordFilterRule(self.config)
 
         self.rules_map = {
             "wallspamrule": self.wallspamrule,
@@ -51,22 +59,27 @@ class AutoMod(Cog, Settings, GroupCommands):
             "spamrule": self.spamrule,
             "maxwordsrule": self.maxwordsrule,
             "maxcharsrule": self.maxcharsrule,
+            "wordfilterrule": self.wordfilterrule,
         }
 
-    async def _take_action(self, rule, message: discord.Message):
+    async def _take_action(
+        self, rule, message: discord.Message,
+    ):
         guild: discord.Guild = message.guild
         author: discord.Member = message.author
         channel: discord.TextChannel = message.channel
 
         action_to_take = await rule.get_action_to_take(guild)
-        self.bot.dispatch(f"automod_{rule.rule_name}", author, message)
+        self.bot.dispatch(
+            f"automod_{rule.rule_name}", author, message,
+        )
         log.info(
             f"{rule.rule_name} - {author} ({author.id}) - {guild} ({guild.id}) - {channel} ({channel.id})"
         )
 
         _action_reason = f"[AutoMod] {rule.rule_name}"
 
-        should_announce, announce_channel = await self.announcements_enabled(guild=guild)
+        (should_announce, announce_channel,) = await self.announcements_enabled(guild=guild)
         should_delete = await rule.get_should_delete(guild)
 
         message_has_been_deleted = False
@@ -93,9 +106,11 @@ class AutoMod(Cog, Settings, GroupCommands):
         elif action_to_take == "add_role":
             try:
                 role = guild.get_role(
-                    await self.config.guild(guild).get_raw(rule.rule_name, "role_to_add")
+                    await self.config.guild(guild).get_raw(rule.rule_name, "role_to_add",)
                 )
-                await maybe_add_role(author, role)
+                await maybe_add_role(
+                    author, role,
+                )
                 log.info(f"{rule.rule_name} - Added Role (role) to {author} ({author.id})")
             except KeyError:
                 # role to add not set
@@ -104,7 +119,9 @@ class AutoMod(Cog, Settings, GroupCommands):
 
         elif action_to_take == "ban":
             try:
-                await guild.ban(user=author, reason=_action_reason, delete_message_days=1)
+                await guild.ban(
+                    user=author, reason=_action_reason, delete_message_days=1,
+                )
                 log.info(f"{rule.rule_name} - Banned {author} ({author.id})")
             except discord.errors.Forbidden:
                 log.warning(f"{rule.rule_name} - Failed to ban user, missing permissions")
@@ -116,17 +133,21 @@ class AutoMod(Cog, Settings, GroupCommands):
         if should_announce:
             if announce_channel is not None:
                 announce_embed = await rule.get_announcement_embed(
-                    message, message_has_been_deleted, action_taken_success, action_to_take
+                    message, message_has_been_deleted, action_taken_success, action_to_take,
                 )
                 announce_channel_obj = guild.get_channel(announce_channel)
                 await announce_channel_obj.send(embed=announce_embed)
 
     @Cog.listener()
-    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+    async def on_message_edit(
+        self, before: discord.Message, after: discord.Message,
+    ):
         await self._listen_for_infractions(after)
 
     @Cog.listener(name="on_message_without_command")
-    async def _listen_for_infractions(self, message: discord.Message):
+    async def _listen_for_infractions(
+        self, message: discord.Message,
+    ):
         guild = message.guild
         author = message.author
 
@@ -142,14 +163,16 @@ class AutoMod(Cog, Settings, GroupCommands):
         if message.author.bot:
             return
 
-        for rule_name, rule in self.rules_map.items():
+        for (rule_name, rule,) in self.rules_map.items():
             if await rule.is_enabled(guild):
                 # check all if roles - if any are immune, then that's okay, we'll let them spam :)
-                is_whitelisted_role = await rule.role_is_whitelisted(guild, author.roles)
-                is_channel_or_global = await rule.is_enforced_channel(guild, message.channel)
+                is_whitelisted_role = await rule.role_is_whitelisted(guild, author.roles,)
+                is_channel_or_global = await rule.is_enforced_channel(guild, message.channel,)
                 if is_whitelisted_role or not is_channel_or_global:
                     # user is whitelisted, channel is not whitelisted let's stop here
                     return
 
                 if await rule.is_offensive(message):
-                    await self._take_action(rule, message)
+                    await self._take_action(
+                        rule, message,
+                    )
