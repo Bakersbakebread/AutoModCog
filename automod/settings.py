@@ -171,7 +171,7 @@ class Settings:
             { group_name: [channel_ids] }
         """
         settings = await self.config.guild(guild).settings()
-        return settings.get("channel_groups", [])
+        return settings.get("channel_groups", {})
 
     async def set_new_channel_group(
         self, guild: discord.Guild, group_name: str, channels: [discord.TextChannel]
@@ -192,12 +192,10 @@ class Settings:
             None
         """
         all_groups = await self.get_channel_groups(guild)
-        for group in all_groups:
-            if group_name in group:
-                raise ValueError(f"That group already exists.")
+        if group_name in all_groups:
+            raise ValueError(f"That group already exists.")
 
-        to_append = {group_name.lower(): [ch.id for ch in channels]}
-        all_groups.append(to_append)
+        all_groups[group_name.lower()] = [ch.id for ch in channels]
         await self.config.guild(guild).set_raw("settings", "channel_groups", value=all_groups)
 
     @commands.group()

@@ -22,7 +22,6 @@ groups = {
 
 
 class GroupCommands:
-
     # commands specific to filterword
     @commands.group()
     @checks.mod_or_permissions(manage_messages=True)
@@ -35,16 +34,53 @@ class GroupCommands:
         """
         pass
 
-    @wordfilterrule.command(name="add")
+    @wordfilterrule.command(name="remove", aliases=["del"])
     @checks.mod_or_permissions(manage_messages=True)
-    async def add_word_to_filter(
-        self, ctx, word: str, channels: Greedy[discord.TextChannel] = None, is_cleaned: bool = False
-    ):
+    async def _remove_filter(self, ctx, word: str):
+        """Remove a word from the list of filtered words"""
+        current_filtered = await self.wordfilterrule.get_filtered_words(ctx.guild)
+        current_filtered = [x['word'] for x in current_filtered]
+        if word not in current_filtered:
+            return await ctx.send(await error_message(f"`{word}` is not being filtered."))
+
+        await self.wordfilterrule.remove_filter(ctx.guild, word)
+        return await ctx.send(check_success(f"`{word}` has been removed from the list of filtered words."))
+
+    @wordfilterrule.group(name="add")
+    @checks.mod_or_permissions(manage_messages=True)
+    async def add_word_to_filter(self, ctx):
+        pass
+
+    @add_word_to_filter.command(name="channel")
+    async def _add_to_channels(self, ctx, word: str, channels: Greedy[discord.TextChannel] = None, is_cleaned: bool = False):
         """Add a word to the list of forbidden words
 
         `word`: the word to add to the filter
+        `channels`: a list of channels to add this word two
         `is_cleaned`: an optional True/False argument that will remove punctuation from the word
         """
+        await self.handle_adding_to_filter(ctx, word, channels, is_cleaned)
+
+    @add_word_to_filter.command(name="group")
+    async def _add_to_group(self, ctx, word: str, group_name: str, is_cleaned: bool = False):
+        """Add a word to a predefined group of channels
+
+        `word`: the word to add to the filter
+        `group`: the key name of the group of channels
+        `is_cleaned`: an optional True/False argument that will remove punctuation from the message
+        """
+        groups = await self.get_channel_groups(ctx.guild)
+        if group_name not in groups:
+            return await ctx.send(
+                await error_message(
+                    f"`{group_name}` Could not find group.")
+            )
+        channels = [ctx.guild.get_channel(ch) for ch in groups[group_name]]
+        await self.handle_adding_to_filter(
+            ctx, word, channels, is_cleaned
+        )
+
+    async def handle_adding_to_filter(self, ctx, word: str, channels: [discord.TextChannel] = None, is_cleaned: bool = False):
         word = word.lower()
         current_filtered = await self.wordfilterrule.get_filtered_words(ctx.guild)
         for values in current_filtered:

@@ -54,6 +54,30 @@ class WordFilterRule(BaseRule):
                 self.rule_name, "words", value=[to_append]
             )
 
+    async def remove_filter(self, guild: discord.Guild, word: str) -> None:
+        """
+        Removes a word from the list of filtered words
+        Parameters
+        ----------
+        guild: discord.Guild
+            The guild where the word is
+        word
+            The word to remove
+        Returns
+        -------
+            None
+
+        Raises
+        -------
+            ValueError if word is not found
+        """
+        all_words = await self.get_filtered_words(guild)
+        for index, word_dict in enumerate(all_words):
+            if word.lower() == word_dict['word']:
+                all_words.pop(index)
+
+        await self.config.guild(guild).set_raw(self.rule_name, "words", value=all_words)
+
     async def get_filtered_words(self, guild: discord.Guild) -> [dict]:
         """
         Get all the filtered words from config
