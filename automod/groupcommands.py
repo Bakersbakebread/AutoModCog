@@ -7,6 +7,7 @@ from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 from .constants import *
 from .utils import *
 from .converters import ToggleBool
+from tabulate import tabulate
 
 groups = {
     "mentionspamrule": "mention spam",
@@ -23,6 +24,9 @@ groups = {
 
 
 class GroupCommands:
+    def __init__(self, *args, **kwargs):
+        self.bot = kwargs.get('bot')
+
     # commands specific to filterword
     @commands.group()
     @checks.mod_or_permissions(manage_messages=True)
@@ -58,7 +62,7 @@ class GroupCommands:
             amount_filtered = len(current_filtered)
             channels_filtering = [x['channel'] for x in current_filtered]
             channels_filtering = len(channels_filtering)
-            chunked = chunks(current_filtered, 6)
+            chunked = chunks(current_filtered, 4)
             embeds = []
             for chunk in chunked:
                 embed = discord.Embed(
@@ -68,25 +72,36 @@ class GroupCommands:
                 for word in chunk:
                     channels = word['channel']
                     chans = "\n".join('#{0}'.format(ctx.guild.get_channel(w)) for w in channels) if channels else '[Global]'
-                    embed.add_field(name=word['word'],
-                                    value=box(f"Cleaned: [{word['is_cleaned']}]\n\n"
-                                          f"Channels\n"
-                                          f"---\n"
-                                          f"{chans}", "ini"))
+                    table = [
+                        [(f"Word     : [{word['word']}]\n"
+                         f"Added by : [{self.bot.get_user(word['author'])}]\n"
+                         f"Cleaned  : [{word['is_cleaned']}]\n"), chans],
+
+                    ]
+                    tab = box(tabulate(table, ['Meta', 'Channels'], tablefmt="presto"), "ini")
+                    embed.add_field(name=f"`{word['word']}`",
+                                    value=tab,
+                                    inline=False)
 
                 embeds.append(embed)
-            return await menu(ctx, embeds, DEFAULT_CONTROLS)
+            if embeds:
+                return await menu(ctx, embeds, DEFAULT_CONTROLS)
+            else:
+                return await ctx.send("There is currently no words being filtered.")
         else:
             try:
                 current_word = [x for x in current_filtered if x['word'] == word.lower()][0]
                 channels = current_word['channel']
                 chans = "\n".join('#{0}'.format(ctx.guild.get_channel(w)) for w in channels) if channels else '[Global]'
+                author = self.bot.get_user(current_word['author']) or 'Not found user.'
                 embed = discord.Embed(title="Word filtering",
                                       description=box(
                                           f"Word    : [{current_word['word']}]\n"
-                                          f"Cleaned : [{current_word['is_cleaned']}]\n\n"
+                                          f"Cleaned : [{current_word['is_cleaned']}]\n"
+                                          f"Added by: [{author}]\n"
+                                          f"--------\n"
                                           f"Channels\n"
-                                          f"---\n"
+                                          f"--------\n"
                                           f"{chans}", "ini"))
                 return await ctx.send(embed=embed)
             except IndexError:
@@ -133,7 +148,7 @@ class GroupCommands:
             if word in values['word']:
                 return await ctx.send(await error_message(f"`{word}` is already being filtered."))
         await self.wordfilterrule.add_to_filter(
-            guild=ctx.guild, word=word, channels=channels, is_cleaned=is_cleaned
+            guild=ctx.guild, word=word, author=ctx.author, channels=channels, is_cleaned=is_cleaned
         )
 
         nl = "\n"
