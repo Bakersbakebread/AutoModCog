@@ -129,10 +129,10 @@ class Settings:
             if setting.is_deleting:
                 value += "+ Deleting\n"
             else:
-                value += "-Not deleting\n"
+                value += "- Not deleting\n"
             value += f"---Action---\n{setting.action_to_take}"
             value += "```"
-            embed.add_field(name=setting.rule_name, value=value)
+            embed.add_field(name=f"`{setting.rule_name}`", value=value)
 
         announcing, where = await self.announcements_enabled(guild)
         announcing = "+ Enabled" if announcing else None
