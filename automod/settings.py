@@ -7,6 +7,7 @@ from redbot.core import checks
 import logging
 
 from redbot.core.utils.chat_formatting import box
+from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
 from .rules.base import BaseRuleSettingsDisplay
 from .utils import transform_bool, error_message, docstring_parameter, chunk_list, chunk_dict
@@ -240,8 +241,16 @@ class Settings:
     async def show_all_groups(self, ctx):
         groups = await self.get_channel_groups(ctx.guild)
         groups_chunked = chunk_dict(groups, 3)
+        embeds = []
         for index, group in enumerate(groups_chunked):
-            await ctx.send(f"Group index: {index}\n{group}")
+            embed = discord.Embed(title="Channel groups")
+            for k, v in group.items():
+                chans = "\n".join('- #{0}'.format(ctx.guild.get_channel(w)) for w in v) if v else '[Global]'
+                embed.add_field(
+                    name=f"Group name: `{k}`",
+                    value=box(chans, "asciidoc"))
+            embeds.append(embed)
+        return await menu(ctx, embeds, DEFAULT_CONTROLS)
 
     @automodset.command(name="show", aliases=["all"])
     async def show_all_settings(self, ctx, rulename: str = None):
