@@ -10,7 +10,7 @@ from redbot.core.utils.chat_formatting import box
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
 from .rules.base import BaseRuleSettingsDisplay
-from .utils import transform_bool, error_message, docstring_parameter, chunk_list, chunk_dict, check_success
+from .utils import transform_bool, error_message, docstring_parameter, chunk_dict, check_success
 from .converters import ToggleBool
 
 log = logging.getLogger(name="red.breadcogs.automod")
@@ -249,7 +249,7 @@ class Settings:
         """
         Add a new channel group
 
-        Group name bust be one word, `-`, `_` are permitted.
+        Group name must be one word, `-`, `_` are permitted.
         """
         try:
             await self.set_new_channel_group(ctx.guild, group_name, channels)
@@ -289,7 +289,13 @@ class Settings:
                     name=f"Group name: `{k}`",
                     value=box(chans, "asciidoc"))
             embeds.append(embed)
-        return await menu(ctx, embeds, DEFAULT_CONTROLS)
+        if embeds:
+            if len(embeds) > 1:
+                return await menu(ctx, embeds, DEFAULT_CONTROLS)
+            else:
+                return await ctx.send(embed=embeds[0])
+        else:
+            return await ctx.send(await error_message("There are currently no channel groups."))
 
     @automodset.command(name="show", aliases=["all"])
     async def show_all_settings(self, ctx, rulename: str = None):
