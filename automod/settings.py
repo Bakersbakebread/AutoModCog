@@ -10,7 +10,7 @@ from redbot.core.utils.chat_formatting import box
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
 from .rules.base import BaseRuleSettingsDisplay
-from .utils import transform_bool, error_message, docstring_parameter, chunk_list, chunk_dict
+from .utils import transform_bool, error_message, docstring_parameter, chunk_list, chunk_dict, check_success
 from .converters import ToggleBool
 
 log = logging.getLogger(name="red.breadcogs.automod")
@@ -174,6 +174,34 @@ class Settings:
         settings = await self.config.guild(guild).settings()
         return settings.get("channel_groups", {})
 
+    async def remove_channel_group(self, guild: discord.Guild, group_name: str) -> None:
+        """
+        Remove a single channel group
+
+        Parameters
+        ----------
+        guild: discord.Guild
+            The guild where the channel group is
+
+        group_name: str
+            The key of the group
+
+        Returns
+        -------
+        None
+
+        Raises
+        -------
+        ValueError
+            If group does not exist
+        """
+        all_groups = await self.get_channel_groups(guild)
+        if group_name not in all_groups:
+            raise ValueError(f"`{group_name}` is not a channel group")
+
+        del all_groups[group_name.lower()]
+        await self.config.guild(guild).set_raw("settings", "channel_groups", value=all_groups)
+
     async def set_new_channel_group(
         self, guild: discord.Guild, group_name: str, channels: [discord.TextChannel]
     ) -> None:
@@ -237,8 +265,19 @@ class Settings:
         except ValueError as e:
             return await ctx.send(await error_message(e.args[0]))
 
+    @channel_group.command(name="remove", aliases=['delete', 'del', 'rm'])
+    async def _remove_group(self, ctx, group_name: str):
+        """Remove a channel group"""
+        try:
+            await self.remove_channel_group(ctx.guild, group_name)
+        except ValueError as e:
+            return await ctx.send(await error_message(e.args[0]))
+
+        return await ctx.send(check_success(f"`{group_name}` has been removed."))
+
     @channel_group.command(name="show", aliases=['list'])
     async def show_all_groups(self, ctx):
+        """Show all available channel groups"""
         groups = await self.get_channel_groups(ctx.guild)
         groups_chunked = chunk_dict(groups, 3)
         embeds = []
