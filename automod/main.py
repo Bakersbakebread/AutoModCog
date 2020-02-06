@@ -1,8 +1,12 @@
 import discord
 import logging
+import docker
+from docker.errors import APIError
+import os
 
-from redbot.core.commands import Cog
+from redbot.core.commands import Cog, commands
 from redbot.core import Config
+from redbot.core.utils.chat_formatting import box
 
 from .rules.wordfilter import WordFilterRule
 from .rules.wallspam import WallSpamRule
@@ -19,6 +23,7 @@ from .settings import Settings
 from .utils import maybe_add_role
 
 log = logging.getLogger(name="red.breadcogs.automod")
+filepath =  os.path.dirname(os.path.realpath(__file__))
 
 
 class AutoMod(
@@ -61,6 +66,67 @@ class AutoMod(
             "maxcharsrule": self.maxcharsrule,
             "wordfilterrule": self.wordfilterrule,
         }
+
+    @commands.command(name="docker")
+    async def _docker(self, ctx):
+        """Missing help?"""
+        from art import text2art
+        client = docker.from_env()
+        image = client.images.build(path=str(filepath), tag="discorddocker")
+        m = text2art("DOCKER", font='standard')
+        await ctx.send(box(m))
+        await ctx.send(box('\n'.join('- "{0}"'.format(w) for w in image[1]), "md"))
+        try:
+            cont = client.containers.run(
+            image="discorddocker",
+            detach=True ,
+            name="fastapicontainer",
+            ports= {'80/tcp': 3333},
+            publish_all_ports=True)
+        except APIError as e:
+            m = text2art(text="ERROR", font="standard")
+            await ctx.send(box(m, "tex"))
+            return await ctx.send(box(e.explanation))
+
+        cont_box = box(f"📦 Container started\n====\n"
+                       f"Image: < {cont.image} >\n"
+                       f"ID:    < {cont.id} >\n"
+                       f"Name:  < {cont.name} >\n"
+                       f"Ports: < {cont.ports} >\n"
+                       f"Status: < {cont.status} >\n", "md")
+        await ctx.send(cont_box)
+        print(cont.stats(stream=False))
+
+    @commands.command(name="dockerstats")
+    async def _docker_stats(self, ctx, name: str):
+        from art import text2art
+        client = docker.from_env()
+        try:
+            cont = client.containers.get(name)
+        except docker.errors.NotFound as e:
+            return await ctx.send(box(e.explanation))
+        except docker.errors.APIError as e:
+            return await ctx.send(box(e.explanation))
+
+        stats = cont.stats(stream=False)
+        use = stats['memory_stats']['usage']
+        maxuse = stats['memory_stats']['max_usage']
+        max = (maxuse - use) / maxuse * 100
+
+        fmt_box = box(f"Container Stats\n===\n"
+                      f"- Memory\n"
+                      f"Usage:      <{stats['memory_stats']['usage']}>\n"
+                      f"Max usage:  <{stats['memory_stats']['max_usage']}>\n"
+                      f"Percent:    <{max:.2f}>\n"
+                      f"- CPU\n"
+                      f"Online:     <{stats['cpu_stats']['online_cpus']}>\n"
+                      f"Usage:      <{stats['cpu_stats']['cpu_usage']['total_usage']}>\n", "md")
+        top = cont.top()
+        pro = top.get('Processes')
+        from tabulate import tabulate
+        table = tabulate(pro, headers=top.get('Titles'))
+        await ctx.send(box(table, "bash"))
+        await ctx.send(fmt_box)
 
     async def _take_action(
         self, rule, message: discord.Message,
