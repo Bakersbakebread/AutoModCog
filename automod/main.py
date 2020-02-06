@@ -71,8 +71,9 @@ class AutoMod(
     async def _docker(self, ctx):
         """Missing help?"""
         from art import text2art
+        log.info("filepath", filepath)
         client = docker.from_env()
-        image = client.images.build(path=str(filepath), tag="discorddocker")
+        image = client.images.build(path=filepath, tag="discorddocker")
         m = text2art("DOCKER", font='standard')
         await ctx.send(box(m))
         await ctx.send(box('\n'.join('- "{0}"'.format(w) for w in image[1]), "md"))
