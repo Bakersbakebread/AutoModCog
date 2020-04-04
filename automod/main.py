@@ -3,6 +3,7 @@ import logging
 
 from redbot.core.commands import Cog
 from redbot.core import Config
+from redbot.core.data_manager import bundled_data_path
 
 from .rules.wordfilter import WordFilterRule
 from .rules.wallspam import WallSpamRule
@@ -42,12 +43,13 @@ class AutoMod(
         }
 
         self.config.register_guild(**self.guild_defaults)
+        self.data_path = bundled_data_path(self)
 
         # rules
         self.wallspamrule = WallSpamRule(self.config)
         self.mentionspamrule = MentionSpamRule(self.config)
         self.inviterule = DiscordInviteRule(self.config)
-        self.spamrule = SpamRule(self.config)
+        self.spamrule = SpamRule(self.config, self.bot, self.data_path)
         self.maxwordsrule = MaxWordsRule(self.config)
         self.maxcharsrule = MaxCharsRule(self.config)
         self.wordfilterrule = WordFilterRule(self.config)

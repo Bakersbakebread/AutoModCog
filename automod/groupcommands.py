@@ -39,6 +39,22 @@ class GroupCommands:
         """
         pass
 
+    @commands.command(name="preda")
+    async def _embed_test(self, ctx):
+        table = [
+            [("Messages Read      : 322\n"
+             "Messages Sent       : 10\n"
+             "Messages Deleted    : 4\n"
+             "Messages Edited     : 203\n"
+             "DMs Received        : 0\n")
+             ],
+            [("Commands Processed  : 9\n"
+                "rrors Occured      : 0\n"
+            "Sessions Resumed    : 0\n")
+        ]
+            ]
+        await ctx.send(embed=discord.Embed(description=box(tabulate(table, headers=['One', 'Two']))))
+
     @wordfilterrule.command(name="remove", aliases=["del"])
     @checks.mod_or_permissions(manage_messages=True)
     async def _remove_filter(self, ctx, word: str):

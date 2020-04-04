@@ -1,6 +1,9 @@
 from collections import defaultdict
 
 import discord
+import asyncio
+
+from redbot.core.data_manager import bundled_data_path
 
 from .base import BaseRule
 
@@ -42,13 +45,41 @@ class SpamRule(BaseRule):
     2) It checks if the content has been spammed 15 times in 17 seconds.
     """
 
-    def __init__(self, config, *args, **kwargs):
+    def __init__(self, config, bot, data_path, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
         self._spam_check = defaultdict(SpamChecker)
+        self.user_cache = []
+        self.bot = bot
+        self.data_path = data_path
+        self.is_sleeping = False
+
+    async def make_nice_file(self, list_of_ids) -> None:
+        with open(f"{self.data_path}/spam_users.txt", "w") as f:
+            f.write(str(datetime.date.today()))
+            f.write("\n\n")
+            for id in list_of_ids:
+                f.write(f"{id}\n")
+            f.write("--" * 10)
+            f.write(f"\n{len(list_of_ids)} total users.")
+
+    async def finish_collecting(self, message):
+        if not self.is_sleeping:
+            channel = await self.config.guild(message.guild).get_raw("settings", "announcement_channel")
+            channel = self.bot.get_channel(channel)
+            self.is_sleeping = True
+            await asyncio.sleep(300)
+            await self.make_nice_file(set(self.user_cache))
+            await channel.send("ID's found during most recent spamrule encounter:",
+                               file=discord.File(f"{self.data_path}/spam_users.txt"))
+
 
     async def is_offensive(self, message: discord.Message,) -> bool:
         checker = self._spam_check[message.guild.id]
         if not checker.is_spamming(message):
             return False
+
+        if message.author.id not in self.user_cache:
+            self.user_cache.append(message.author.id)
+        await self.finish_collecting(message)
 
         return True
