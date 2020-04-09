@@ -9,6 +9,9 @@ from .base import BaseRule
 
 from redbot.core import commands
 import datetime
+import logging
+
+log = logging.getLogger("red.breadcogs.automod.spamrule")
 
 
 # Inspiration and some logic taken from RoboDanny
@@ -54,6 +57,7 @@ class SpamRule(BaseRule):
         self.is_sleeping = False
 
     async def make_nice_file(self, list_of_ids) -> None:
+        log.info(f"Making new file with {len(list_of_ids)} ids ")
         with open(f"{self.data_path}/spam_users.txt", "w") as f:
             f.write(str(datetime.date.today()))
             f.write("\n\n")
@@ -67,11 +71,12 @@ class SpamRule(BaseRule):
             channel = await self.config.guild(message.guild).get_raw("settings", "announcement_channel")
             channel = self.bot.get_channel(channel)
             self.is_sleeping = True
-            await asyncio.sleep(300)
+            await asyncio.sleep(300) # wait 5 minutes before we send the file to allow the cacheing to catch up
             await self.make_nice_file(set(self.user_cache))
+            log.info('Attempting to send recent spammers in last five minutes')
+            log.info(f'File Path: {self.data_path}/spam_users.txt')
             await channel.send("ID's found during most recent spamrule encounter:",
                                file=discord.File(f"{self.data_path}/spam_users.txt"))
-
 
     async def is_offensive(self, message: discord.Message,) -> bool:
         checker = self._spam_check[message.guild.id]
