@@ -94,7 +94,8 @@ class Settings:
 
             enforced_value = "`Global`"
             if setting.enforced_channels:
-                enforced_value = ", ".join(setting.enforced_channels)
+                channel_names = [self.bot.get_channel(ch).mention for ch in setting.enforced_channels]
+                enforced_value = ", ".join(channel_names)
 
             embed.add_field(name="Enforced Channels", value=enforced_value)
             if setting.whitelisted_roles:
