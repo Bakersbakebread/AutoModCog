@@ -156,10 +156,10 @@ class AutoMod(
         if not message.guild:
             return
 
-        # # immune from automod actions
-        # if isinstance(author, discord.Member):
-        #     if await self.bot.is_automod_immune(message.author):
-        #         return
+        # immune from automod actions
+        if isinstance(author, discord.Member):
+            if await self.bot.is_automod_immune(message.author):
+                return
 
         # don't listen to other bots, no skynet here
         if message.author.bot:
