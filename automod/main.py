@@ -153,7 +153,7 @@ class AutoMod(
         guild = message.guild
         author = message.author
 
-        if not message.guild:
+        if not message.guild or await self.bot.is_automod_immune(author):
             return
 
         # # immune from automod actions
