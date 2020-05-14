@@ -1,22 +1,21 @@
-from collections import defaultdict
-
+import datetime
+import logging
 import discord
 import asyncio
 
 from redbot.core.data_manager import bundled_data_path
-
 from .base import BaseRule
-
 from redbot.core import commands
-import datetime
-import logging
+from collections import defaultdict
+from ..utils import send_to_paste, chunks
+
 
 log = logging.getLogger("red.breadcogs.automod.spamrule")
 
 
 # Inspiration and some logic taken from RoboDanny
 class CooldownByContent(commands.CooldownMapping):
-    def _bucket_key(self, message: discord.Message,) -> tuple:
+    def _bucket_key(self, message: discord.Message, ) -> tuple:
         return (
             message.channel.id,
             message.content,
@@ -24,11 +23,11 @@ class CooldownByContent(commands.CooldownMapping):
 
 
 class SpamChecker:
-    def __init__(self,):
-        self.by_content = CooldownByContent.from_cooldown(15, 17.0, commands.BucketType.member,)
-        self.by_user = commands.CooldownMapping.from_cooldown(10, 12.0, commands.BucketType.user,)
+    def __init__(self, ):
+        self.by_content = CooldownByContent.from_cooldown(15, 17.0, commands.BucketType.member, )
+        self.by_user = commands.CooldownMapping.from_cooldown(10, 12.0, commands.BucketType.user, )
 
-    def is_spamming(self, message: discord.Message,) -> bool:
+    def is_spamming(self, message: discord.Message, ) -> bool:
         current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
 
         user_bucket = self.by_user.get_bucket(message)
@@ -56,29 +55,28 @@ class SpamRule(BaseRule):
         self.data_path = data_path
         self.is_sleeping = False
 
-    async def make_nice_file(self, list_of_ids) -> None:
-        log.info(f"Making new file with {len(list_of_ids)} ids ")
-        with open(f"{self.data_path}/spam_users.txt", "w") as f:
-            f.write(str(datetime.date.today()))
-            f.write("\n\n")
-            for id in list_of_ids:
-                f.write(f"{id}\n")
-            f.write("--" * 10)
-            f.write(f"\n{len(list_of_ids)} total users.")
+    async def make_nice_string(self, list_of_ids) -> str:
+        users_chunked = chunks(list_of_ids, 3)
+        string_to_return = f"# {str(datetime.date.today())}\n" \
+                           f"# {len(list_of_ids)} total users.\n" \
+                           f"----\n\n"
+        for chunk in users_chunked:
+            three_in_row = ' '.join([str(uid) for uid in chunk])
+            string_to_return += f"{three_in_row}\n"
+
+        return string_to_return
 
     async def finish_collecting(self, message):
         if not self.is_sleeping:
             channel = await self.config.guild(message.guild).get_raw("settings", "announcement_channel")
-            channel = self.bot.get_channel(channel)
+            channel = message.guild.get_channel(channel)
             self.is_sleeping = True
-            await asyncio.sleep(300) # wait 5 minutes before we send the file to allow the cacheing to catch up
-            await self.make_nice_file(set(self.user_cache))
-            log.info('Attempting to send recent spammers in last five minutes')
-            log.info(f'File Path: {self.data_path}/spam_users.txt')
-            await channel.send("ID's found during most recent spamrule encounter:",
-                               file=discord.File(f"{self.data_path}/spam_users.txt"))
+            await asyncio.sleep(300)  # wait 5 minutes before we send the file to allow the cacheing to catch up
+            st = await self.make_nice_string(list(set(self.user_cache)))
+            paste = await send_to_paste(st, "md")
+            await channel.send(f"ID's found during most recent spamrule encounter: {paste}")
 
-    async def is_offensive(self, message: discord.Message,) -> bool:
+    async def is_offensive(self, message: discord.Message, ) -> bool:
         checker = self._spam_check[message.guild.id]
         if not checker.is_spamming(message):
             return False

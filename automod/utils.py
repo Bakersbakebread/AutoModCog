@@ -1,4 +1,5 @@
 import discord
+import aiohttp
 
 from redbot.core.utils.predicates import ReactionPredicate
 from redbot.core.utils.menus import start_adding_reactions
@@ -99,3 +100,30 @@ def docstring_parameter(*sub,):
 
 def transform_bool(is_enabled,):
     return "Enabled" if is_enabled else "Disabled"
+
+
+async def send_to_paste(content: str, extension: str=None, url="http://utils.red") -> str:
+    """
+    Handy tool to send string content to a pastebin
+    Parameters
+    ----------
+    content
+        String content to be sent to pastebin, this does not add linebreaks.
+    extension
+        The file extension to render markup on the file, ex: .py .md .txt et all
+    url
+        the URL of the 'hastebin' usually suffixed after with /documents
+
+    Returns
+    -------
+    string
+        URL of new paste
+
+    """
+    async with aiohttp.ClientSession() as session:
+        async with session.post(f"{url}/documents", data=content) as resp:
+            j = await resp.json()
+            paste_key = j['key']
+            url = f"{url}/{paste_key}" + (f".{extension}" if extension else '')
+            return url
+
