@@ -25,7 +25,7 @@ groups = {
 
 class GroupCommands:
     def __init__(self, *args, **kwargs):
-        self.bot = kwargs.get('bot')
+        self.bot = kwargs.get("bot")
 
     # commands specific to filterword
     @commands.group()
@@ -42,30 +42,34 @@ class GroupCommands:
     @commands.command(name="preda")
     async def _embed_test(self, ctx):
         table = [
-            [("Messages Read      : 322\n"
-             "Messages Sent       : 10\n"
-             "Messages Deleted    : 4\n"
-             "Messages Edited     : 203\n"
-             "DMs Received        : 0\n")
-             ],
-            [("Commands Processed  : 9\n"
-                "rrors Occured      : 0\n"
-            "Sessions Resumed    : 0\n")
+            [
+                (
+                    "Messages Read      : 322\n"
+                    "Messages Sent       : 10\n"
+                    "Messages Deleted    : 4\n"
+                    "Messages Edited     : 203\n"
+                    "DMs Received        : 0\n"
+                )
+            ],
+            [("Commands Processed  : 9\n" "rrors Occured      : 0\n" "Sessions Resumed    : 0\n")],
         ]
-            ]
-        await ctx.send(embed=discord.Embed(description=box(tabulate(table, headers=['One', 'Two']))))
+        await ctx.send(
+            embed=discord.Embed(description=box(tabulate(table, headers=["One", "Two"])))
+        )
 
     @wordfilterrule.command(name="remove", aliases=["del"])
     @checks.mod_or_permissions(manage_messages=True)
     async def _remove_filter(self, ctx, word: str):
         """Remove a word from the list of filtered words"""
         current_filtered = await self.wordfilterrule.get_filtered_words(ctx.guild)
-        current_filtered = [x['word'] for x in current_filtered]
+        current_filtered = [x["word"] for x in current_filtered]
         if word not in current_filtered:
             return await ctx.send(await error_message(f"`{word}` is not being filtered."))
 
         await self.wordfilterrule.remove_filter(ctx.guild, word)
-        return await ctx.send(check_success(f"`{word}` has been removed from the list of filtered words."))
+        return await ctx.send(
+            check_success(f"`{word}` has been removed from the list of filtered words.")
+        )
 
     @wordfilterrule.command(name="list")
     async def _show_all_filtered_words(self, ctx, word: str = None):
@@ -76,28 +80,37 @@ class GroupCommands:
         current_filtered = await self.wordfilterrule.get_filtered_words(ctx.guild)
         if not word:
             amount_filtered = len(current_filtered)
-            channels_filtering = [x['channel'] for x in current_filtered]
+            channels_filtering = [x["channel"] for x in current_filtered]
             channels_filtering = len(channels_filtering)
             chunked = chunks(current_filtered, 4)
             embeds = []
             for chunk in chunked:
                 embed = discord.Embed(
                     title="Filtered words",
-                    description=f"To show information about a single rule: `{ctx.prefix}{ctx.command} <word>`")
-                embed.set_footer(text=f"Filtering {amount_filtered} words across {channels_filtering} channels")
+                    description=f"To show information about a single rule: `{ctx.prefix}{ctx.command} <word>`",
+                )
+                embed.set_footer(
+                    text=f"Filtering {amount_filtered} words across {channels_filtering} channels"
+                )
                 for word in chunk:
-                    channels = word['channel']
-                    chans = "\n".join('#{0}'.format(ctx.guild.get_channel(w)) for w in channels) if channels else '[Global]'
+                    channels = word["channel"]
+                    chans = (
+                        "\n".join("#{0}".format(ctx.guild.get_channel(w)) for w in channels)
+                        if channels
+                        else "[Global]"
+                    )
                     table = [
-                        [(f"Word     : [{word['word']}]\n"
-                         f"Added by : [{self.bot.get_user(word['author'])}]\n"
-                         f"Cleaned  : [{word['is_cleaned']}]\n"), chans],
-
+                        [
+                            (
+                                f"Word     : [{word['word']}]\n"
+                                f"Added by : [{self.bot.get_user(word['author'])}]\n"
+                                f"Cleaned  : [{word['is_cleaned']}]\n"
+                            ),
+                            chans,
+                        ],
                     ]
-                    tab = box(tabulate(table, ['Meta', 'Channels'], tablefmt="presto"), "ini")
-                    embed.add_field(name=f"`{word['word']}`",
-                                    value=tab,
-                                    inline=False)
+                    tab = box(tabulate(table, ["Meta", "Channels"], tablefmt="presto"), "ini")
+                    embed.add_field(name=f"`{word['word']}`", value=tab, inline=False)
 
                 embeds.append(embed)
             if embeds:
@@ -106,19 +119,27 @@ class GroupCommands:
                 return await ctx.send("There is currently no words being filtered.")
         else:
             try:
-                current_word = [x for x in current_filtered if x['word'] == word.lower()][0]
-                channels = current_word['channel']
-                chans = "\n".join('#{0}'.format(ctx.guild.get_channel(w)) for w in channels) if channels else '[Global]'
-                author = self.bot.get_user(current_word['author']) or 'Not found user.'
-                embed = discord.Embed(title="Word filtering",
-                                      description=box(
-                                          f"Word    : [{current_word['word']}]\n"
-                                          f"Cleaned : [{current_word['is_cleaned']}]\n"
-                                          f"Added by: [{author}]\n"
-                                          f"--------\n"
-                                          f"Channels\n"
-                                          f"--------\n"
-                                          f"{chans}", "ini"))
+                current_word = [x for x in current_filtered if x["word"] == word.lower()][0]
+                channels = current_word["channel"]
+                chans = (
+                    "\n".join("#{0}".format(ctx.guild.get_channel(w)) for w in channels)
+                    if channels
+                    else "[Global]"
+                )
+                author = self.bot.get_user(current_word["author"]) or "Not found user."
+                embed = discord.Embed(
+                    title="Word filtering",
+                    description=box(
+                        f"Word    : [{current_word['word']}]\n"
+                        f"Cleaned : [{current_word['is_cleaned']}]\n"
+                        f"Added by: [{author}]\n"
+                        f"--------\n"
+                        f"Channels\n"
+                        f"--------\n"
+                        f"{chans}",
+                        "ini",
+                    ),
+                )
                 return await ctx.send(embed=embed)
             except IndexError:
                 return await ctx.send(await error_message(f"`{word}` is not being filtered."))
@@ -129,7 +150,13 @@ class GroupCommands:
         pass
 
     @add_word_to_filter.command(name="channel")
-    async def _add_to_channels(self, ctx, word: str, channels: Greedy[discord.TextChannel] = None, is_cleaned: bool = False):
+    async def _add_to_channels(
+        self,
+        ctx,
+        word: str,
+        channels: Greedy[discord.TextChannel] = None,
+        is_cleaned: bool = False,
+    ):
         """Add a word to the list of forbidden words
 
         `word`: the word to add to the filter
@@ -148,35 +175,29 @@ class GroupCommands:
         """
         groups = await self.get_channel_groups(ctx.guild)
         if group_name not in groups:
-            return await ctx.send(
-                await error_message(
-                    f"`{group_name}` Could not find group.")
-            )
+            return await ctx.send(await error_message(f"`{group_name}` Could not find group."))
         channels = [ctx.guild.get_channel(ch) for ch in groups[group_name]]
-        await self.handle_adding_to_filter(
-            ctx, word, channels, is_cleaned
-        )
+        await self.handle_adding_to_filter(ctx, word, channels, is_cleaned)
 
-    async def handle_adding_to_filter(self, ctx, word: str, channels: [discord.TextChannel] = None, is_cleaned: bool = False):
+    async def handle_adding_to_filter(
+        self, ctx, word: str, channels: [discord.TextChannel] = None, is_cleaned: bool = False
+    ):
         word = word.lower()
         current_filtered = await self.wordfilterrule.get_filtered_words(ctx.guild)
         for values in current_filtered:
-            if word in values['word']:
+            if word in values["word"]:
                 return await ctx.send(await error_message(f"`{word}` is already being filtered."))
         await self.wordfilterrule.add_to_filter(
             guild=ctx.guild, word=word, author=ctx.author, channels=channels, is_cleaned=is_cleaned
         )
 
         nl = "\n"
-        chans = nl.join('+ {0}'.format(w) for w in channels) if channels else '+ Global'
-        fmt_box = box(
-            f"Word       :  [{word}]\n"
-            f"Cleaned    :  [{is_cleaned}]\n",
-            "ini"
-        )
+        chans = nl.join("+ {0}".format(w) for w in channels) if channels else "+ Global"
+        fmt_box = box(f"Word       :  [{word}]\n" f"Cleaned    :  [{is_cleaned}]\n", "ini")
         embed = discord.Embed(
             title=f"Word added",
-            description=f"You can remove this word from the filter by running the command: `{ctx.prefix}wordfilterrule remove {word}`")
+            description=f"You can remove this word from the filter by running the command: `{ctx.prefix}wordfilterrule remove {word}`",
+        )
         embed.add_field(name="Word details", value=fmt_box)
         embed.add_field(name="Channels", value=box(chans, "diff"))
         return await ctx.send(embed=embed)

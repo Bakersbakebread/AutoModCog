@@ -20,7 +20,7 @@ async def maybe_add_role(
 def chunks(l, n):
     # looping till length l
     for i in range(0, len(l), n):
-        yield l[i:i + n]
+        yield l[i : i + n]
 
 
 async def thumbs_up_success(message: str,):
@@ -102,7 +102,7 @@ def transform_bool(is_enabled,):
     return "Enabled" if is_enabled else "Disabled"
 
 
-async def send_to_paste(content: str, extension: str=None, url="http://utils.red") -> str:
+async def send_to_paste(content: str, extension: str = None, url="http://utils.red") -> str:
     """
     Handy tool to send string content to a pastebin
     Parameters
@@ -123,7 +123,6 @@ async def send_to_paste(content: str, extension: str=None, url="http://utils.red
     async with aiohttp.ClientSession() as session:
         async with session.post(f"{url}/documents", data=content) as resp:
             j = await resp.json()
-            paste_key = j['key']
-            url = f"{url}/{paste_key}" + (f".{extension}" if extension else '')
+            paste_key = j["key"]
+            url = f"{url}/{paste_key}" + (f".{extension}" if extension else "")
             return url
-

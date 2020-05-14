@@ -15,7 +15,11 @@ class WordFilterRule(BaseRule):
 
     async def add_to_filter(
         self,
-        guild: discord.Guild, word: str, author: discord.Member, channels: [discord.TextChannel] = None, is_cleaned: bool = False,
+        guild: discord.Guild,
+        word: str,
+        author: discord.Member,
+        channels: [discord.TextChannel] = None,
+        is_cleaned: bool = False,
     ) -> None:
         """
         Add a word to the filter list
@@ -44,7 +48,7 @@ class WordFilterRule(BaseRule):
             "word": word,
             "author": author.id,
             "is_cleaned": is_cleaned,
-            "channel": [channel.id for channel in channels] if channels else []
+            "channel": [channel.id for channel in channels] if channels else [],
         }
         try:
             words = await self.config.guild(guild).get_raw(self.rule_name, "words")
@@ -74,7 +78,7 @@ class WordFilterRule(BaseRule):
         """
         all_words = await self.get_filtered_words(guild)
         for index, word_dict in enumerate(all_words):
-            if word.lower() == word_dict['word']:
+            if word.lower() == word_dict["word"]:
                 all_words.pop(index)
 
         await self.config.guild(guild).set_raw(self.rule_name, "words", value=all_words)
@@ -100,7 +104,8 @@ class WordFilterRule(BaseRule):
     @staticmethod
     def remove_punctuation(sentence: str):
         from string import punctuation
-        no_punc = sentence.translate(str.maketrans('', '', punctuation))
+
+        no_punc = sentence.translate(str.maketrans("", "", punctuation))
         return no_punc
 
     @staticmethod
@@ -110,8 +115,8 @@ class WordFilterRule(BaseRule):
 
     async def is_filtered(self, sentence: str, filtered_words: [dict]):
         for word in filtered_words:
-            to_filter = word['word']
-            is_cleaned = word['is_cleaned']
+            to_filter = word["word"]
+            is_cleaned = word["is_cleaned"]
 
             if is_cleaned:
                 sentence = self.remove_punctuation(sentence)
@@ -126,6 +131,6 @@ class WordFilterRule(BaseRule):
         sentence = self.no_mentions(message.content)
 
         for word in all_words:
-            channels = word['channel']
+            channels = word["channel"]
             if message.channel.id in channels or channels is None:
                 return await self.is_filtered(sentence, all_words)
