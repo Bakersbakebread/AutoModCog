@@ -5,7 +5,7 @@
     "description": "Automoderated actions with settings at a granular level.",
     "hidden": false,
     "install_msg": "Thank you for installing AutoMod!\nSetup your announcement channel with `[p]automodset announce channel`",
-    "requirements": ["async_lru"],
+    "requirements": ["async_lru", "tabulate"],
     "short": "Automoderated actions",
     "tags": [
         "command",
