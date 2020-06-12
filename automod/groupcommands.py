@@ -17,7 +17,7 @@ groups = {
     "maxwordsrule": "maximum words",
     "maxcharsrule": "maximum characters",
     "wordfilterrule": "word filter",
-    "imagedetectionrule": "image detection"
+    "imagedetectionrule": "image detection",
 }
 
 
@@ -134,11 +134,11 @@ class GroupCommands:
 
     @add_word_to_filter.command(name="channel")
     async def _add_to_channels(
-            self,
-            ctx,
-            word: str,
-            channels: Greedy[discord.TextChannel] = None,
-            is_cleaned: bool = False,
+        self,
+        ctx,
+        word: str,
+        channels: Greedy[discord.TextChannel] = None,
+        is_cleaned: bool = False,
     ):
         """Add a word to the list of forbidden words
 
@@ -163,7 +163,7 @@ class GroupCommands:
         await self.handle_adding_to_filter(ctx, word, channels, is_cleaned)
 
     async def handle_adding_to_filter(
-            self, ctx, word: str, channels: [discord.TextChannel] = None, is_cleaned: bool = False
+        self, ctx, word: str, channels: [discord.TextChannel] = None, is_cleaned: bool = False
     ):
         word = word.lower()
         current_filtered = await self.wordfilterrule.get_filtered_words(ctx.guild)
@@ -333,6 +333,7 @@ class GroupCommands:
     """
     Commands specific to ImageDetection
     """
+
     @commands.group()
     @checks.mod_or_permissions(manage_messages=True)
     async def imagedetectionrule(self, ctx):
@@ -415,10 +416,10 @@ def action_to_take__wrapper(group, name, friendly_name):
         embed = discord.Embed(
             title=f"What action should be taken against {friendly_name}?",
             description=f":one: Nothing (still fires event for third-party integration)\n"
-                        f":two: DM a role\n"
-                        f":three: Add a role to offender (Mute role for example)\n"
-                        f":four: Kick offender\n"
-                        f":five: Ban offender",
+            f":two: DM a role\n"
+            f":three: Add a role to offender (Mute role for example)\n"
+            f":four: Kick offender\n"
+            f":five: Ban offender",
         )
         action = await get_option_reaction(ctx, embed=embed)
         if not action:

@@ -66,7 +66,7 @@ class AutoMod(
             "maxwordsrule": self.maxwordsrule,
             "maxcharsrule": self.maxcharsrule,
             "wordfilterrule": self.wordfilterrule,
-            "imagedetectionrule" : self.imagedetectionrule
+            "imagedetectionrule": self.imagedetectionrule,
         }
 
     async def _take_action(
@@ -140,7 +140,11 @@ class AutoMod(
         if should_announce:
             if announce_channel is not None:
                 announce_embed = await rule.get_announcement_embed(
-                    message, message_has_been_deleted, action_taken_success, action_to_take, is_offensive
+                    message,
+                    message_has_been_deleted,
+                    action_taken_success,
+                    action_to_take,
+                    is_offensive,
                 )
                 announce_channel_obj = guild.get_channel(announce_channel)
                 await announce_channel_obj.send(embed=announce_embed)
@@ -182,10 +186,6 @@ class AutoMod(
                 is_offensive = await rule.is_offensive(message)
                 if is_offensive:
                     if isinstance(is_offensive, InfractionInformation):
-                        await self._take_action(
-                            rule, message, is_offensive
-                        )
+                        await self._take_action(rule, message, is_offensive)
                     else:
-                        await self._take_action(
-                            rule, message
-                        )
+                        await self._take_action(rule, message)
