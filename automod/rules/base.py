@@ -312,12 +312,14 @@ class BaseRule:
             after_role,
         )
 
+    @abstractmethod
     async def get_announcement_embed(
         self,
         message: discord.Message,
         message_has_been_deleted: bool,
         action_taken_success: bool,
-        action_taken=None,
+        action_taken: Optional[str],
+        infraction_information=None
     ) -> discord.Embed:
         shortened_message_content = (
             (message.content[:120] + " .... (shortened)")
