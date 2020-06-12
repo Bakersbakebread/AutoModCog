@@ -5,6 +5,9 @@ from redbot.core.commands import Cog
 from redbot.core import Config
 from redbot.core.data_manager import bundled_data_path
 
+
+from .rules.models import InfractionInformation
+from .rules.imagedetection import ImageDetectionRule
 from .rules.wordfilter import WordFilterRule
 from .rules.wallspam import WallSpamRule
 from .rules.mentionspam import MentionSpamRule
@@ -53,6 +56,7 @@ class AutoMod(
         self.maxwordsrule = MaxWordsRule(self.config)
         self.maxcharsrule = MaxCharsRule(self.config)
         self.wordfilterrule = WordFilterRule(self.config)
+        self.imagedetectionrule = ImageDetectionRule(self.config)
 
         self.rules_map = {
             "wallspamrule": self.wallspamrule,
@@ -62,10 +66,11 @@ class AutoMod(
             "maxwordsrule": self.maxwordsrule,
             "maxcharsrule": self.maxcharsrule,
             "wordfilterrule": self.wordfilterrule,
+            "imagedetectionrule": self.imagedetectionrule,
         }
 
     async def _take_action(
-        self, rule, message: discord.Message,
+        self, rule, message: discord.Message, is_offensive: InfractionInformation = None
     ):
         guild: discord.Guild = message.guild
         author: discord.Member = message.author
@@ -135,7 +140,11 @@ class AutoMod(
         if should_announce:
             if announce_channel is not None:
                 announce_embed = await rule.get_announcement_embed(
-                    message, message_has_been_deleted, action_taken_success, action_to_take,
+                    message,
+                    message_has_been_deleted,
+                    action_taken_success,
+                    action_to_take,
+                    is_offensive,
                 )
                 announce_channel_obj = guild.get_channel(announce_channel)
                 await announce_channel_obj.send(embed=announce_embed)
@@ -174,7 +183,9 @@ class AutoMod(
                     # user is whitelisted, channel is not whitelisted let's stop here
                     return
 
-                if await rule.is_offensive(message):
-                    await self._take_action(
-                        rule, message,
-                    )
+                is_offensive = await rule.is_offensive(message)
+                if is_offensive:
+                    if isinstance(is_offensive, InfractionInformation):
+                        await self._take_action(rule, message, is_offensive)
+                    else:
+                        await self._take_action(rule, message)

@@ -102,6 +102,10 @@ def transform_bool(is_enabled,):
     return "Enabled" if is_enabled else "Disabled"
 
 
+def transform_bool_to_emoji(b):
+    return "✅" if b else "❌"
+
+
 async def send_to_paste(content: str, extension: str = None, url="http://utils.red") -> str:
     """
     Handy tool to send string content to a pastebin
