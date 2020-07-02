@@ -77,18 +77,14 @@ class AutoMod(
         channel: discord.TextChannel = message.channel
 
         action_to_take = await rule.get_action_to_take(guild)
-        self.bot.dispatch(
-            f"automod_{rule.rule_name}", author, message,
-        )
+        self.bot.dispatch(f"automod_{rule.rule_name}", author, message)
         log.info(
             f"{rule.rule_name} - {author} ({author.id}) - {guild} ({guild.id}) - {channel} ({channel.id})"
         )
 
         _action_reason = f"[AutoMod] {rule.rule_name}"
 
-        (should_announce, announce_channel,) = await self.announcements_enabled(guild=guild)
         should_delete = await rule.get_should_delete(guild)
-
         message_has_been_deleted = False
         if should_delete:
             try:
@@ -137,17 +133,21 @@ class AutoMod(
                 log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
                 action_taken_success = False
 
-        if should_announce:
-            if announce_channel is not None:
-                announce_embed = await rule.get_announcement_embed(
-                    message,
-                    message_has_been_deleted,
-                    action_taken_success,
-                    action_to_take,
-                    is_offensive,
-                )
-                announce_channel_obj = guild.get_channel(announce_channel)
-                await announce_channel_obj.send(embed=announce_embed)
+        should_announce_global, global_announce_channel = await self.announcements_enabled(guild=guild)
+        # if global announce
+        # send to global channel
+        # if rule announce 
+        # send to rule channel
+        if should_announce_global and global_announce_channel is not None:
+            announce_embed = await rule.get_announcement_embed(
+                message,
+                message_has_been_deleted,
+                action_taken_success,
+                action_to_take,
+                is_offensive,
+            )
+            announce_channel_obj = guild.get_channel(global_announce_channel)
+            await announce_channel_obj.send(embed=announce_embed)
 
     @Cog.listener()
     async def on_message_edit(
@@ -166,9 +166,8 @@ class AutoMod(
             return
 
         # immune from automod actions
-        if isinstance(author, discord.Member):
-            if await self.bot.is_automod_immune(message.author):
-                return
+        if isinstance(author, discord.Member) and await self.bot.is_automod_immune(message.author):
+            return
 
         # don't listen to other bots, no skynet here
         if message.author.bot:
