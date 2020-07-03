@@ -425,7 +425,7 @@ def action_to_take__wrapper(group, name, friendly_name):
         if not action:
             return await ctx.send("Okay. Nothings changed.")
 
-        await ctx.send(await thumbs_up_success(ACTION_CONFIRMATION[action]))
+        await ctx.send(thumbs_up_success(ACTION_CONFIRMATION[action]))
         if action == "add_role":
             mute_role = await rule.get_mute_role(ctx.guild)
             if mute_role is None:
@@ -572,6 +572,69 @@ def add_channel_wrapper(group, name, friendly_name):
     return add_channel
 
 
+def announce_wrapper(group, name, friendly_name):
+    @group.group(name="announce")
+    @checks.mod_or_permissions(manage_messages=True)
+    async def _announce_wrapper(self, ctx):
+        """Announce settings"""
+        pass
+
+    return _announce_wrapper
+
+
+def announce_channel_wrapper(group, name, friendly_name):
+    @group.command(name="channel")
+    @checks.mod_or_permissions(manage_messages=True)
+    async def add_announce_channel(self, ctx, channel: discord.TextChannel):
+        """
+        Choose the channel where announcements should go.
+
+        Selecting a channel enables the rule specific channel announcements.
+        """
+        rule = getattr(self, name)
+        await rule.set_specific_announce_channel(ctx.guild, channel)
+        return await ctx.send(
+            thumbs_up_success(f"{name} announcements will now be sent to {channel}")
+        )
+
+    return add_announce_channel
+
+
+def announce_clear_wrapper(group, name, friendly_name):
+    @group.command(name="clear")
+    @checks.mod_or_permissions(manage_messages=True)
+    async def clear_announce_channel(self, ctx):
+        """
+        Clear and disable rule announcing
+        """
+        rule = getattr(self, name)
+        announce_channel = await rule.get_specific_announce_channel(discord.Guild)
+        if announce_channel is None:
+            return await ctx.send("No channel has been set.")
+
+        await rule.clear_specific_announce_channel(ctx.guild)
+        return await ctx.send(thumbs_up_success(f"Cleared the announcement channel."))
+
+    return clear_announce_channel
+
+
+def announce_show_wrapper(group, name, friendly_name):
+    @group.command(name="show", aliases=["settings", "info"])
+    @checks.mod_or_permissions(manage_messages=True)
+    async def clear_announce_channel(self, ctx):
+        """
+        Show current settings for rule specific announcing
+        """
+        rule = getattr(self, name)
+        announce_channel = await rule.get_specific_announce_channel(ctx.guild)
+        if announce_channel is None:
+            return await ctx.send("No channel has been set.")
+
+        return await ctx.send(f"{name} will announce in {announce_channel.mention}")
+
+    return clear_announce_channel
+
+
 def settings_wrapper(group, name, friendly_name):
     @group.command(name="settings")
     @checks.mod_or_permissions(manage_messages=True)
@@ -624,6 +687,25 @@ for name, friendly_name in groups.items():
     whitelistrole_show = whitelistrole_show_wrapper(whitelistrole, name, friendly_name)
     whitelistrole_show.__name__ = f"whitelistrole_show_{name}"
     setattr(GroupCommands, f"whitelistrole_show_{name}", whitelistrole_show)
+
+    """
+    Rule specific announce Settings
+    """
+    announce_group = announce_wrapper(group, name, friendly_name)
+    announce_group.__name__ = f"announce_group_{name}"
+    setattr(GroupCommands, f"announce_group_{name}", announce_group)
+
+    announce_add_channel = announce_channel_wrapper(announce_group, name, friendly_name)
+    announce_add_channel.__name__ = f"announce_add_channel_{name}"
+    setattr(GroupCommands, f"announce_add_channel_{name}", announce_add_channel)
+
+    announce_clear_channel = announce_clear_wrapper(announce_group, name, friendly_name)
+    announce_clear_channel.__name__ = f"announce_clear_channel_{name}"
+    setattr(GroupCommands, f"announce_clear_channel_{name}", announce_clear_channel)
+
+    announce_show_channel = announce_show_wrapper(announce_group, name, friendly_name)
+    announce_show_channel.__name__ = f"announce_show_channel_{name}"
+    setattr(GroupCommands, f"announce_show_channel_{name}", announce_show_channel)
 
     add_role = add_role_wrapper(group, name, friendly_name)
     add_role.__name__ = f"add_role_{name}"

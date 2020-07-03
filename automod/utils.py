@@ -23,11 +23,11 @@ def chunks(l, n):
         yield l[i : i + n]
 
 
-async def thumbs_up_success(message: str,):
+def thumbs_up_success(message: str,):
     return f"`👍🏼` {message}"
 
 
-async def error_message(message: str,):
+def error_message(message: str,):
     return f"\❌ {message}"
 
 
