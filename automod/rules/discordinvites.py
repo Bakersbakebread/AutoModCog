@@ -1,11 +1,12 @@
+from abc import ABCMeta, ABC
+
 import discord
 import re
 
 from .base import BaseRule
-from ..utils import *
 
 
-class DiscordInviteRule(BaseRule):
+class DiscordInviteRule(BaseRule, ABC):
     def __init__(
         self, config,
     ):
@@ -56,13 +57,12 @@ class DiscordInviteRule(BaseRule):
     async def is_offensive(
         self, message: discord.Message,
     ):
-        author = message.author
         guild = message.guild
         content = message.content
 
         allowed_links = await self.get_allowed_links(guild)
 
-        r = re.compile("(https?:\/\/)?(www\.)?((discordapp\.com/invite)|(discord\.gg))\/(\w+)")
+        r = re.compile(r'(discord\.(?:gg|io|me|li)|discord(?:app)?\.com\/invite)\/(\S+)', re.I)
 
         if allowed_links:
             filter_content = [x for x in content.split() if x not in allowed_links]
