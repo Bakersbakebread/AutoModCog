@@ -177,7 +177,7 @@ class GroupCommands:
 
         nl = "\n"
         chans = nl.join("+ {0}".format(w) for w in channels) if channels else "+ Global"
-        fmt_box = box(f"Word       :  [{word}]\n" f"Cleaned    :  [{is_cleaned}]\n", "ini")
+        fmt_box = box(f"Word       :  [{word}]\nCleaned    :  [{is_cleaned}]\n", "ini")
         embed = discord.Embed(
             title=f"Word added",
             description=f"You can remove this word from the filter by running the command: `{ctx.prefix}wordfilterrule remove {word}`",
