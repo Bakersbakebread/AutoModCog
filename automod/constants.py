@@ -20,6 +20,7 @@ DEFAULT_OPTIONS = {
     "is_enabled": False,
     "delete_message": False,
     "send_dm": False,
+    "rule_specific_announce": None,
 }
 
 OPTIONS_MAP = {
@@ -32,4 +33,5 @@ OPTIONS_MAP = {
     "is_enabled": "Enabled",
     "delete_message": "Delete message",
     "send_dm": "DM User",
+    "rule_specific_announce": "Announcing special",
 }

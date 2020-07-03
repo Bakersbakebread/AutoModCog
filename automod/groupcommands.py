@@ -425,7 +425,7 @@ def action_to_take__wrapper(group, name, friendly_name):
         if not action:
             return await ctx.send("Okay. Nothings changed.")
 
-        await ctx.send(await thumbs_up_success(ACTION_CONFIRMATION[action]))
+        await ctx.send(thumbs_up_success(ACTION_CONFIRMATION[action]))
         if action == "add_role":
             mute_role = await rule.get_mute_role(ctx.guild)
             if mute_role is None:
@@ -591,8 +591,12 @@ def announce_channel_wrapper(group, name, friendly_name):
 
         Selecting a channel enables the rule specific channel announcements.
         """
-        ## add rule announce channel here
-        pass
+        rule = getattr(self, name)
+        await rule.set_specific_announce_channel(ctx.guild, channel)
+        return await ctx.send(
+            thumbs_up_success(f"{name} announcements will now be sent to {channel}")
+        )
+
     return add_announce_channel
 
 
@@ -603,20 +607,31 @@ def announce_clear_wrapper(group, name, friendly_name):
         """
         Clear and disable rule announcing
         """
-        ## add rule announce channel here
-        pass
+        rule = getattr(self, name)
+        announce_channel = await rule.get_specific_announce_channel(discord.Guild)
+        if announce_channel is None:
+            return await ctx.send("No channel has been set.")
+
+        await rule.clear_specific_announce_channel(ctx.guild)
+        return await ctx.send(thumbs_up_success(f"Cleared the announcement channel."))
+
     return clear_announce_channel
 
 
 def announce_show_wrapper(group, name, friendly_name):
-    @group.command(name="show", aliases=['settings', 'info'])
+    @group.command(name="show", aliases=["settings", "info"])
     @checks.mod_or_permissions(manage_messages=True)
     async def clear_announce_channel(self, ctx):
         """
         Show current settings for rule specific announcing
         """
-        ## add rule announce channel here
-        pass
+        rule = getattr(self, name)
+        announce_channel = await rule.get_specific_announce_channel(ctx.guild)
+        if announce_channel is None:
+            return await ctx.send("No channel has been set.")
+
+        return await ctx.send(f"{name} will announce in {announce_channel.mention}")
+
     return clear_announce_channel
 
 

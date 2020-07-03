@@ -43,6 +43,11 @@ class AutoMod(
             WallSpamRule.__class__.__name__: DEFAULT_OPTIONS,
             MentionSpamRule.__class__.__name__: DEFAULT_OPTIONS,
             DiscordInviteRule.__class__.__name__: DEFAULT_OPTIONS,
+            SpamRule.__class__.__name__: DEFAULT_OPTIONS,
+            MaxWordsRule.__class__.__name__: DEFAULT_OPTIONS,
+            MaxCharsRule.__class__.__name__: DEFAULT_OPTIONS,
+            WordFilterRule.__class__.__name__: DEFAULT_OPTIONS,
+            ImageDetectionRule.__class__.__name__: DEFAULT_OPTIONS,
         }
 
         self.config.register_guild(**self.guild_defaults)
@@ -133,21 +138,46 @@ class AutoMod(
                 log.warning(f"{rule.rule_name} - Failed to ban user [HTTP EXCEPTION]")
                 action_taken_success = False
 
-        should_announce_global, global_announce_channel = await self.announcements_enabled(guild=guild)
-        # if global announce
-        # send to global channel
-        # if rule announce 
-        # send to rule channel
-        if should_announce_global and global_announce_channel is not None:
-            announce_embed = await rule.get_announcement_embed(
-                message,
-                message_has_been_deleted,
-                action_taken_success,
-                action_to_take,
-                is_offensive,
+        announce_embed = await rule.get_announcement_embed(
+            message, message_has_been_deleted, action_taken_success, action_to_take, is_offensive,
+        )
+        await self.maybe_send_announcement(guild, rule, announce_embed)
+
+    async def maybe_send_announcement(
+        self, guild: discord.Guild, rule, announce_embed: discord.Embed
+    ) -> None:
+        """
+        Method to send announcements to channel depending on settings. Can be local to the rule, or global.
+        Parameters
+        ----------
+        guild
+            The guild where infraction was found.
+        rule
+            The rule triggered.
+        announce_embed
+            Announcement embed
+        """
+        try:
+            announce_channel = None
+
+            should_announce_global, announce_channel_id = await self.announcements_enabled(
+                guild=guild
             )
-            announce_channel_obj = guild.get_channel(global_announce_channel)
-            await announce_channel_obj.send(embed=announce_embed)
+            if should_announce_global and announce_channel_id is not None:
+                announce_channel = guild.get_channel(announce_channel_id)
+
+            rule_specific_announce_channel = await rule.get_specific_announce_channel(guild)
+            if rule_specific_announce_channel is not None:
+                announce_channel = rule_specific_announce_channel
+
+            if announce_channel is None:
+                return  # not Announcing
+
+            return await announce_channel.send(embed=announce_embed)
+        except discord.errors.Forbidden:
+            log.exception(f"Missing permissions to send messages")
+        except discord.errors.NotFound:
+            log.exception(f"Could not send announce embed as channel was deleted")
 
     @Cog.listener()
     async def on_message_edit(
