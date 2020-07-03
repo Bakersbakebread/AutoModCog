@@ -58,7 +58,7 @@ class SpamRule(BaseRule):
     async def make_nice_string(self, list_of_ids) -> str:
         users_chunked = chunks(list_of_ids, 3)
         string_to_return = (
-            f"# {str(datetime.date.today())}\n" f"# {len(list_of_ids)} total users.\n" f"----\n\n"
+            f"# {str(datetime.date.today())}\n# {len(list_of_ids)} total users.\n" f"----\n\n"
         )
         for chunk in users_chunked:
             three_in_row = " ".join([str(uid) for uid in chunk])

@@ -1,13 +1,12 @@
-from typing import Optional
-
+import aiohttp
 import discord
 import re
 import logging
-import aiohttp
 
+from typing import Optional
 from .base import BaseRule
 from .models import InfractionInformation, EmbedField
-from ..utils import *
+from ..utils import transform_bool_to_emoji
 
 log = logging.getLogger(name="red.breadcogs.automod.imagedetection")
 
