@@ -227,7 +227,6 @@ class Settings:
         """
         try:
             await self.set_new_channel_group(ctx.guild, group_name, channels)
-            nl = "\n"
             fmt_box = box("\n".join("+ {0}".format(ch.name) for ch in channels), "diff")
             em = discord.Embed(
                 title="Channel group added",
