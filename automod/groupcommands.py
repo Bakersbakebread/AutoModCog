@@ -4,8 +4,9 @@ from redbot.core import commands, checks
 from redbot.core.utils.chat_formatting import box
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
-from .constants import *
-from .utils import *
+from .constants import ACTION_CONFIRMATION
+from .utils import error_message, check_success, chunks, thumbs_up_success, docstring_parameter, transform_bool, \
+    get_option_reaction, yes_or_no
 from .converters import ToggleBool
 from tabulate import tabulate
 
@@ -47,7 +48,7 @@ class GroupCommands:
         current_filtered = await self.wordfilterrule.get_filtered_words(ctx.guild)
         current_filtered = [x["word"] for x in current_filtered]
         if word not in current_filtered:
-            return await ctx.send(await error_message(f"`{word}` is not being filtered."))
+            return await ctx.send(error_message(f"`{word}` is not being filtered."))
 
         await self.wordfilterrule.remove_filter(ctx.guild, word)
         return await ctx.send(
@@ -156,10 +157,10 @@ class GroupCommands:
         `group`: the key name of the group of channels
         `is_cleaned`: an optional True/False argument that will remove punctuation from the message
         """
-        groups = await self.get_channel_groups(ctx.guild)
-        if group_name not in groups:
+        channel_groups = await self.get_channel_groups(ctx.guild)
+        if group_name not in channel_groups:
             return await ctx.send(await error_message(f"`{group_name}` Could not find group."))
-        channels = [ctx.guild.get_channel(ch) for ch in groups[group_name]]
+        channels = [ctx.guild.get_channel(ch) for ch in channel_groups[group_name]]
         await self.handle_adding_to_filter(ctx, word, channels, is_cleaned)
 
     async def handle_adding_to_filter(
@@ -169,7 +170,7 @@ class GroupCommands:
         current_filtered = await self.wordfilterrule.get_filtered_words(ctx.guild)
         for values in current_filtered:
             if word in values["word"]:
-                return await ctx.send(await error_message(f"`{word}` is already being filtered."))
+                return await ctx.send(error_message(f"`{word}` is already being filtered."))
         await self.wordfilterrule.add_to_filter(
             guild=ctx.guild, word=word, author=ctx.author, channels=channels, is_cleaned=is_cleaned
         )
@@ -299,7 +300,7 @@ class GroupCommands:
         except ValueError:
             return await ctx.send("`👆` That link already exists.")
 
-        return await ctx.send(f"`👍` Added `{link}` to the allowed links list.")
+        return await ctx.send(thumbs_up_success(f"Added `{link}` to the allowed links list."))
 
     @whitelistlink.command(name="delete")
     @checks.mod_or_permissions(manage_messages=True)
@@ -312,7 +313,7 @@ class GroupCommands:
         try:
             await self.inviterule.delete_allowed_link(ctx.guild, link)
         except ValueError as e:
-            await ctx.send(f"`❌` {e.args[0]}")
+            await ctx.send(error_message(f"{e.args[0]}"))
 
     @whitelistlink.command(name="show")
     @checks.mod_or_permissions(manage_messages=True)
@@ -328,7 +329,7 @@ class GroupCommands:
             )
             await ctx.send(embed=embed)
         else:
-            await ctx.send(f"`❌` No links currently allowed.")
+            await ctx.send(error_message("No links currently allowed."))
 
     """
     Commands specific to ImageDetection
@@ -377,7 +378,7 @@ def enable_rule_wrapper(group, name, friendly_name):
     @group.command(name="toggle")
     @checks.mod_or_permissions(manage_messages=True)
     @docstring_parameter(ToggleBool.fmt_box)
-    async def enable_rule(self, ctx, toggle: ToggleBool):
+    async def _enable_rule_command(self, ctx, toggle: ToggleBool):
         """
         Enable or disable this rule
 
@@ -396,13 +397,13 @@ def enable_rule_wrapper(group, name, friendly_name):
             f"**{friendly_name.title()}** set from `{transform_bool(before)}` to `{transform_bool(after)}`"
         )
 
-    return enable_rule
+    return _enable_rule_command
 
 
 def action_to_take__wrapper(group, name, friendly_name):
     @group.command(name="action")
     @checks.mod_or_permissions(manage_messages=True)
-    async def action_to_take(self, ctx):
+    async def _action_to_take_command(self, ctx):
         """
         Choose which action to take on an offensive message
 
@@ -430,19 +431,19 @@ def action_to_take__wrapper(group, name, friendly_name):
             mute_role = await rule.get_mute_role(ctx.guild)
             if mute_role is None:
                 await ctx.send(
-                    await error_message(
+                    error_message(
                         f"There is no role set. Add one with: `{ctx.prefix}{name} role <role>`"
                     )
                 )
         await rule.set_action_to_take(action, ctx.guild)
 
-    return action_to_take
+    return _action_to_take_command
 
 
 def delete_message_wrapper(group, name, friendly_name):
     @group.command(name="delete")
     @checks.mod_or_permissions(manage_messages=True)
-    async def delete_message(self, ctx):
+    async def _delete_message_command(self, ctx):
         """
         Toggles whether message should be deleted on offence
 
@@ -454,7 +455,7 @@ def delete_message_wrapper(group, name, friendly_name):
             f"Deleting messages set from `{transform_bool(before)}` to `{transform_bool(after)}`"
         )
 
-    return delete_message
+    return _delete_message_command
 
 
 def whitelist_wrapper(group, name, friendly_name):
@@ -473,7 +474,7 @@ def whitelist_wrapper(group, name, friendly_name):
 def whitelistrole_add_wrapper(group, name, friendly_name):
     @group.command(name="add")
     @checks.mod_or_permissions(manage_messages=True)
-    async def whitelistrole_add(self, ctx, role: discord.Role):
+    async def _whitelistrole_add_command(self, ctx, role: discord.Role):
         """
                 Add a role to be ignored by automod actions"
 
@@ -489,13 +490,13 @@ def whitelistrole_add_wrapper(group, name, friendly_name):
                 await rule.remove_whitelist_role(ctx.guild, role)
         await ctx.send(f"`{role}` added to the whitelist.")
 
-    return whitelistrole_add
+    return _whitelistrole_add_command
 
 
 def whitelistrole_delete_wrapper(group, name, friendly_name):
     @group.command(name="delete")
     @checks.mod_or_permissions(manage_messages=True)
-    async def whitelistrole_delete(self, ctx, role: discord.Role):
+    async def _whitelistrole_delete_command(self, ctx, role: discord.Role):
         """Delete a role from being ignored by automod actions"""
         rule = getattr(self, name)
         try:
@@ -504,13 +505,13 @@ def whitelistrole_delete_wrapper(group, name, friendly_name):
         except ValueError:
             return await ctx.send(f"`{role}` is not whitelisted.")
 
-    return whitelistrole_delete
+    return _whitelistrole_delete_command
 
 
 def whitelistrole_show_wrapper(group, name, friendly_name):
     @group.command(name="show")
     @checks.mod_or_permissions(manage_messages=True)
-    async def whitelistrole_show(self, ctx):
+    async def _whitelistrole_show_command(self, ctx):
         """Show all whitelisted roles"""
         rule = getattr(self, name)
         all_roles = await rule.get_all_whitelisted_roles(ctx.guild)
@@ -523,13 +524,13 @@ def whitelistrole_show_wrapper(group, name, friendly_name):
         else:
             await ctx.send("`❌` No roles currently whitelisted.")
 
-    return whitelistrole_show
+    return _whitelistrole_show_command
 
 
 def add_role_wrapper(group, name, friendly_name):
     @group.command(name="role")
     @checks.mod_or_permissions(manage_messages=True)
-    async def add_role(self, ctx, role: discord.Role):
+    async def _add_role_command(self, ctx, role: discord.Role):
         """
         Set the role to add to offender
 
@@ -540,13 +541,13 @@ def add_role_wrapper(group, name, friendly_name):
 
         await ctx.send(f"Role to add set from `{before}` to `{after}`")
 
-    return add_role
+    return _add_role_command
 
 
 def add_channel_wrapper(group, name, friendly_name):
     @group.command(name="channels")
     @checks.mod_or_permissions(manage_messages=True)
-    async def add_channel(self, ctx, channels: commands.Greedy[discord.TextChannel]):
+    async def _add_channel_command(self, ctx, channels: commands.Greedy[discord.TextChannel]):
         """
         Set the channels to enforce this rule on.
 
@@ -569,7 +570,7 @@ def add_channel_wrapper(group, name, friendly_name):
         else:
             await ctx.send("Channels cleared.")
 
-    return add_channel
+    return _add_channel_command
 
 
 def announce_wrapper(group, name, friendly_name):
@@ -585,7 +586,7 @@ def announce_wrapper(group, name, friendly_name):
 def announce_channel_wrapper(group, name, friendly_name):
     @group.command(name="channel")
     @checks.mod_or_permissions(manage_messages=True)
-    async def add_announce_channel(self, ctx, channel: discord.TextChannel):
+    async def _add_announce_channel_command(self, ctx, channel: discord.TextChannel):
         """
         Choose the channel where announcements should go.
 
@@ -597,13 +598,13 @@ def announce_channel_wrapper(group, name, friendly_name):
             thumbs_up_success(f"{name} announcements will now be sent to {channel}")
         )
 
-    return add_announce_channel
+    return _add_announce_channel_command
 
 
 def announce_clear_wrapper(group, name, friendly_name):
     @group.command(name="clear")
     @checks.mod_or_permissions(manage_messages=True)
-    async def clear_announce_channel(self, ctx):
+    async def _clear_announce_channel_command(self, ctx):
         """
         Clear and disable rule announcing
         """
@@ -615,13 +616,13 @@ def announce_clear_wrapper(group, name, friendly_name):
         await rule.clear_specific_announce_channel(ctx.guild)
         return await ctx.send(thumbs_up_success(f"Cleared the announcement channel."))
 
-    return clear_announce_channel
+    return _clear_announce_channel_command
 
 
 def announce_show_wrapper(group, name, friendly_name):
     @group.command(name="show", aliases=["settings", "info"])
     @checks.mod_or_permissions(manage_messages=True)
-    async def clear_announce_channel(self, ctx):
+    async def _clear_announce_channel_command(self, ctx):
         """
         Show current settings for rule specific announcing
         """
@@ -632,7 +633,7 @@ def announce_show_wrapper(group, name, friendly_name):
 
         return await ctx.send(f"{name} will announce in {announce_channel.mention}")
 
-    return clear_announce_channel
+    return _clear_announce_channel_command
 
 
 def settings_wrapper(group, name, friendly_name):
