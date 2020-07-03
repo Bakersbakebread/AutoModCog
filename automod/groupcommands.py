@@ -643,7 +643,6 @@ def settings_wrapper(group, name, friendly_name):
         """
         Show settings for this rule
         """
-        rule = getattr(self, name)
         await ctx.invoke(self.bot.get_command(f"automodset show"), name)
 
     return _invoke_settings
