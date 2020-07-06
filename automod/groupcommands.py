@@ -6,8 +6,16 @@ from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
 from .constants import ACTION_CONFIRMATION
 from .rules.models import BlackOrWhiteList
-from .utils import error_message, check_success, chunks, thumbs_up_success, docstring_parameter, transform_bool, \
-    get_option_reaction, yes_or_no
+from .utils import (
+    error_message,
+    check_success,
+    chunks,
+    thumbs_up_success,
+    docstring_parameter,
+    transform_bool,
+    get_option_reaction,
+    yes_or_no,
+)
 from .converters import ToggleBool
 from tabulate import tabulate
 
@@ -20,7 +28,7 @@ groups = {
     "maxcharsrule": "maximum characters",
     "wordfilterrule": "word filter",
     "imagedetectionrule": "image detection",
-    "allowedextensionsrule": "Allowed extensions"
+    "allowedextensionsrule": "Allowed extensions",
 }
 
 NEW_LINE = "\n"
@@ -31,15 +39,17 @@ NEW_LINE = "\n"
 class GroupCommands:
     def __init__(self, *args, **kwargs):
         self.bot = kwargs.get("bot")
+
     """
     Commands specific to allowedextensions
     """
+
     async def _handle_adding_extension(
-            self,
-            guild: discord.Guild,
-            channels: [discord.TextChannel],
-            white_or_blacklist: BlackOrWhiteList,
-            extensions: [str]
+        self,
+        guild: discord.Guild,
+        channels: [discord.TextChannel],
+        white_or_blacklist: BlackOrWhiteList,
+        extensions: [str],
     ):
         extensions = [ex.lower() for ex in extensions]
         if white_or_blacklist == BlackOrWhiteList.Blacklist:
@@ -80,7 +90,9 @@ class GroupCommands:
 
     @_whitelist_extension_group.command(name="channel")
     @checks.mod_or_permissions(manage_messages=True)
-    async def _add_ext_channel_whitelist(self, ctx, channels: Greedy[discord.TextChannel], extensions):
+    async def _add_ext_channel_whitelist(
+        self, ctx, channels: Greedy[discord.TextChannel], extensions
+    ):
         """Whitelist extensions in channels
 
         Extensions must be a comma separated list, without the period.
@@ -88,8 +100,12 @@ class GroupCommands:
         Example: jpeg,png,pfd"""
         try:
             extensions = await self.clean_and_validate_extensions(extensions)
-            await self._handle_adding_extension(ctx.guild, channels, BlackOrWhiteList.Whitelist, extensions)
-            return await ctx.send(embed=await self.allowedextensionsrule.extension_added_embed(extensions, channels))
+            await self._handle_adding_extension(
+                ctx.guild, channels, BlackOrWhiteList.Whitelist, extensions
+            )
+            return await ctx.send(
+                embed=await self.allowedextensionsrule.extension_added_embed(extensions, channels)
+            )
         except ValueError as e:
             await ctx.send(error_message(e.args[0]))
 
@@ -108,8 +124,12 @@ class GroupCommands:
             if group_name not in channel_groups:
                 return await ctx.send(error_message(f"`{group_name}` Could not find group."))
             channels = [ctx.guild.get_channel(ch) for ch in channel_groups[group_name]]
-            await self._handle_adding_extension(ctx.guild, channels, BlackOrWhiteList.Whitelist, extensions)
-            return await ctx.send(embed=await self.allowedextensionsrule.extension_added_embed(extensions, channels))
+            await self._handle_adding_extension(
+                ctx.guild, channels, BlackOrWhiteList.Whitelist, extensions
+            )
+            return await ctx.send(
+                embed=await self.allowedextensionsrule.extension_added_embed(extensions, channels)
+            )
         except ValueError as e:
             await ctx.send(error_message(e.args[0]))
 
@@ -124,8 +144,16 @@ class GroupCommands:
         for index, extension in enumerate(current_extensions):
             embed = discord.Embed(
                 title="Whitelisted extensions",
-                description=f"To delete run: `{ctx.prefix}allowedextensionsrule whitelist delete {index}`")
-            value = box(NEW_LINE.join("+ {0}".format(str(ctx.guild.get_channel(ch))) for ch in extension.channels) if extension.channels else "+ Global", "diff")
+                description=f"To delete run: `{ctx.prefix}allowedextensionsrule whitelist delete {index}`",
+            )
+            value = box(
+                NEW_LINE.join(
+                    "+ {0}".format(str(ctx.guild.get_channel(ch))) for ch in extension.channels
+                )
+                if extension.channels
+                else "+ Global",
+                "diff",
+            )
             embed.add_field(name=", ".join(extension.extensions), value=value)
             embeds.append(embed)
 
@@ -134,12 +162,14 @@ class GroupCommands:
         else:
             await ctx.send(embed=embeds[0])
 
-    @_whitelist_extension_group.command(name="delete", aliases=['rem'])
+    @_whitelist_extension_group.command(name="delete", aliases=["rem"])
     @checks.mod_or_permissions(manage_messages=True)
     async def _delete_whitelist_ext_command(self, ctx, index: int):
         """Delete extension settings"""
         try:
-            deleted = await self.allowedextensionsrule.delete_whitelist_extensions(ctx.guild, index)
+            deleted = await self.allowedextensionsrule.delete_whitelist_extensions(
+                ctx.guild, index
+            )
             embed = await self.allowedextensionsrule.deleted_extensions_embed(ctx.guild, deleted)
             return await ctx.send(embed=embed)
         except IndexError:
@@ -164,8 +194,16 @@ class GroupCommands:
         for index, extension in enumerate(current_extensions):
             embed = discord.Embed(
                 title="Blacklisted extensions",
-                description=f"To delete run: `{ctx.prefix}allowedextensionsrule blacklist delete {index}`")
-            value = box(NEW_LINE.join("+ {0}".format(str(ctx.guild.get_channel(ch))) for ch in extension.channels) if extension.channels else "+ Global", "diff")
+                description=f"To delete run: `{ctx.prefix}allowedextensionsrule blacklist delete {index}`",
+            )
+            value = box(
+                NEW_LINE.join(
+                    "+ {0}".format(str(ctx.guild.get_channel(ch))) for ch in extension.channels
+                )
+                if extension.channels
+                else "+ Global",
+                "diff",
+            )
             embed.add_field(name=", ".join(extension.extensions), value=value)
             embeds.append(embed)
 
@@ -174,13 +212,17 @@ class GroupCommands:
         else:
             await ctx.send(embed=embeds[0])
 
-    @_blacklist_extension_group.command(name="delete", aliases=['rem'])
+    @_blacklist_extension_group.command(name="delete", aliases=["rem"])
     @checks.mod_or_permissions(manage_messages=True)
     async def _delete_blacklist_ext_command(self, ctx, index: int):
         """Delete extension settings"""
         try:
-            deleted = await self.allowedextensionsrule.delete_blacklist_extensions(ctx.guild, index)
-            return await ctx.send(embed=await self.allowedextensionsrule.deleted_extensions_embed(ctx.guild, deleted))
+            deleted = await self.allowedextensionsrule.delete_blacklist_extensions(
+                ctx.guild, index
+            )
+            return await ctx.send(
+                embed=await self.allowedextensionsrule.deleted_extensions_embed(ctx.guild, deleted)
+            )
         except IndexError:
             return await ctx.send(error_message("Invalid index to delete."))
         except AttributeError:
@@ -188,7 +230,9 @@ class GroupCommands:
 
     @_blacklist_extension_group.command(name="channel")
     @checks.mod_or_permissions(manage_messages=True)
-    async def _add_ext_channel_blacklist(self, ctx, channels: Greedy[discord.TextChannel], extensions):
+    async def _add_ext_channel_blacklist(
+        self, ctx, channels: Greedy[discord.TextChannel], extensions
+    ):
         """Blacklist extensions in channels
 
         Extensions must be a comma seperated list, without the period.
@@ -196,8 +240,12 @@ class GroupCommands:
         Example: jpeg,png,pfd"""
         try:
             extensions = await self.clean_and_validate_extensions(extensions)
-            await self._handle_adding_extension(ctx.guild, channels, BlackOrWhiteList.Blacklist, extensions)
-            return await ctx.send(embed=await self.allowedextensionsrule.extension_added_embed(extensions, channels))
+            await self._handle_adding_extension(
+                ctx.guild, channels, BlackOrWhiteList.Blacklist, extensions
+            )
+            return await ctx.send(
+                embed=await self.allowedextensionsrule.extension_added_embed(extensions, channels)
+            )
         except ValueError as e:
             await ctx.send(error_message(e.args[0]))
 
@@ -215,7 +263,9 @@ class GroupCommands:
             if group_name not in channel_groups:
                 return await ctx.send(error_message(f"`{group_name}` Could not find group."))
             channels = [ctx.guild.get_channel(ch) for ch in channel_groups[group_name]]
-            await self._handle_adding_extension(ctx.guild, channels, BlackOrWhiteList.Blacklist, extensions)
+            await self._handle_adding_extension(
+                ctx.guild, channels, BlackOrWhiteList.Blacklist, extensions
+            )
             return await ctx.send(embed=await self.extension_added_embed(extensions, channels))
         except ValueError as e:
             await ctx.send(error_message(e.args[0]))

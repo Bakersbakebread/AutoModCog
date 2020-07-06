@@ -28,8 +28,14 @@ def get_message_extensions(message: discord.Message) -> [str]:
 class AllowedExtensionsRule(BaseRule):
     def __init__(self, config):
         super().__init__(config)
-    
-    async def _set_extensions(self, guild: discord.Guild, extensions: [str], channels: [discord.TextChannel], white_or_black_list: str):
+
+    async def _set_extensions(
+        self,
+        guild: discord.Guild,
+        extensions: [str],
+        channels: [discord.TextChannel],
+        white_or_black_list: str,
+    ):
         """
         Add extension(s) to the whitelist per channel
         Parameters
@@ -43,19 +49,24 @@ class AllowedExtensionsRule(BaseRule):
         white_or_black_list
             The config KEY to use
         """
-        to_append = {
-            "extensions": extensions,
-            "channels": [ch.id for ch in channels]
-        }
+        to_append = {"extensions": extensions, "channels": [ch.id for ch in channels]}
         try:
-            extensions = await self.config.guild(guild).get_raw(self.rule_name, white_or_black_list)
+            extensions = await self.config.guild(guild).get_raw(
+                self.rule_name, white_or_black_list
+            )
             extensions.append(to_append)
-            await self.config.guild(guild).set_raw(self.rule_name, white_or_black_list, value=extensions)
+            await self.config.guild(guild).set_raw(
+                self.rule_name, white_or_black_list, value=extensions
+            )
         except KeyError:
             # none have been created yet
-            await self.config.guild(guild).set_raw(self.rule_name, white_or_black_list, value=[to_append])
-    
-    async def _get_extensions(self, guild: discord.Guild, white_or_black_list: str) -> [ExtensionsAndChannels]:
+            await self.config.guild(guild).set_raw(
+                self.rule_name, white_or_black_list, value=[to_append]
+            )
+
+    async def _get_extensions(
+        self, guild: discord.Guild, white_or_black_list: str
+    ) -> [ExtensionsAndChannels]:
         """
         Get's all currently whitelisted extensions
         Parameters
@@ -66,20 +77,28 @@ class AllowedExtensionsRule(BaseRule):
             the config key to get 
         """
         try:
-            extensions = await self.config.guild(guild).get_raw(self.rule_name, white_or_black_list)
+            extensions = await self.config.guild(guild).get_raw(
+                self.rule_name, white_or_black_list
+            )
             return [ExtensionsAndChannels(**c) for c in extensions]
         except KeyError:
             return None
 
-    async def _delete_extensions(self, guild: discord.Guild, white_or_black_list: str, index: int) -> ExtensionsAndChannels:
+    async def _delete_extensions(
+        self, guild: discord.Guild, white_or_black_list: str, index: int
+    ) -> ExtensionsAndChannels:
         extensions = await self.config.guild(guild).get_raw(self.rule_name, white_or_black_list)
         to_delete = extensions[index]
         extensions.remove(to_delete)
-        await self.config.guild(guild).set_raw(self.rule_name, white_or_black_list, value=extensions)
+        await self.config.guild(guild).set_raw(
+            self.rule_name, white_or_black_list, value=extensions
+        )
 
         return ExtensionsAndChannels(**to_delete)
 
-    async def set_whitelist_extensions(self, guild: discord.Guild, extensions: [str], channels: [discord.TextChannel]):
+    async def set_whitelist_extensions(
+        self, guild: discord.Guild, extensions: [str], channels: [discord.TextChannel]
+    ):
         await self._set_extensions(guild, extensions, channels, WHITELIST_EXTENSIONS)
 
     async def get_whitelist_extensions(self, guild: discord.Guild) -> [ExtensionsAndChannels]:
@@ -91,7 +110,9 @@ class AllowedExtensionsRule(BaseRule):
     async def delete_blacklist_extensions(self, guild: discord.Guild, index: int):
         return await self._delete_extensions(guild, BLACKLIST_EXTENSIONS, index)
 
-    async def set_blacklist_extensions(self, guild: discord.Guild, extensions: [str], channels: [discord.TextChannel]):
+    async def set_blacklist_extensions(
+        self, guild: discord.Guild, extensions: [str], channels: [discord.TextChannel]
+    ):
         await self._set_extensions(guild, extensions, channels, BLACKLIST_EXTENSIONS)
 
     async def get_blacklist_extensions(self, guild: discord.Guild) -> [ExtensionsAndChannels]:
@@ -101,7 +122,12 @@ class AllowedExtensionsRule(BaseRule):
     async def deleted_extensions_embed(guild: discord.Guild, extension: ExtensionsAndChannels):
         """Gets an embed for displaying deleted extensions"""
         nl = "\n"
-        chans = box(nl.join("+ {0}".format(guild.get_channel(w)) for w in extension.channels) if extension.channels else "+ Global", "diff")
+        chans = box(
+            nl.join("+ {0}".format(guild.get_channel(w)) for w in extension.channels)
+            if extension.channels
+            else "+ Global",
+            "diff",
+        )
         fmt_box = box(nl.join("+ {0}".format(ext) for ext in extension.channels), "diff")
         embed = discord.Embed(color=discord.Color.red(), description="Extensions deleted.")
         embed.add_field(name="Channels", value=chans, inline=False)
@@ -112,7 +138,9 @@ class AllowedExtensionsRule(BaseRule):
     @staticmethod
     async def extension_added_embed(extensions, channels) -> discord.Embed:
         nl = "\n"
-        chans = box(nl.join("+ {0}".format(w) for w in channels) if channels else "+ Global", "diff")
+        chans = box(
+            nl.join("+ {0}".format(w) for w in channels) if channels else "+ Global", "diff"
+        )
         fmt_box = box(nl.join("+ {0}".format(ext) for ext in extensions), "diff")
         embed = discord.Embed(color=discord.Color.green(), description="Extensions added.")
         embed.add_field(name="Channels", value=chans, inline=False)
@@ -157,7 +185,12 @@ class AllowedExtensionsRule(BaseRule):
         return embed
 
     async def is_offensive(self, message: discord.Message):
-        content, guild, attachments, channel = message.content, message.guild, message.attachments, message.channel
+        content, guild, attachments, channel = (
+            message.content,
+            message.guild,
+            message.attachments,
+            message.channel,
+        )
 
         if not attachments:
             return
@@ -168,21 +201,25 @@ class AllowedExtensionsRule(BaseRule):
         blacklist_extensions = await self.get_blacklist_extensions(guild)
         for entry in blacklist_extensions:
             if channel.id in entry.channels or entry.channels is None:
-                blacklisted_extension = await self.is_blacklist(message_attachment_extensions, entry.extensions)
+                blacklisted_extension = await self.is_blacklist(
+                    message_attachment_extensions, entry.extensions
+                )
                 if blacklisted_extension:
                     return InfractionInformation(
                         message=content,
                         rule=self,
-                        embed_description=f"Blacklisted extension found: `{blacklisted_extension}`")
+                        embed_description=f"Blacklisted extension found: `{blacklisted_extension}`",
+                    )
 
         whitelist_extensions = await self.get_whitelist_extensions(guild)
         for entry in whitelist_extensions:
             if channel.id in entry.channels or entry.channels is None:
-                whitelisted_extension = await self.is_whitelist(message_attachment_extensions, entry.extensions)
+                whitelisted_extension = await self.is_whitelist(
+                    message_attachment_extensions, entry.extensions
+                )
                 if whitelisted_extension:
                     return InfractionInformation(
                         message=content,
                         rule=self,
-                        embed_description=f"Extension found not in allowed whitelist: `{whitelisted_extension}`")
-
-
+                        embed_description=f"Extension found not in allowed whitelist: `{whitelisted_extension}`",
+                    )

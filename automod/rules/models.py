@@ -19,5 +19,5 @@ class InfractionInformation:
 
 
 class BlackOrWhiteList(Enum):
-    Blacklist = 1,
+    Blacklist = (1,)
     Whitelist = 2
