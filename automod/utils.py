@@ -68,6 +68,7 @@ async def get_option_reaction(
     )
 
     pred = ReactionPredicate.with_emojis(emojis, msg, ctx.author,)
+    react = await ctx.bot.wait_for("reaction_add", check=pred, )
     return await action_to_take_mapping(pred.result)
 
 
