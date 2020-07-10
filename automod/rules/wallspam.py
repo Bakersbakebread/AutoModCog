@@ -36,7 +36,7 @@ class WallSpamRule(BaseRule):
             The guild where to get the setting for
         """
         try:
-            await self.config.guild(guild).get_raw(self.rule_name, WallspamRuleConfig.emptyline_enabled)
+            return await self.config.guild(guild).get_raw(self.rule_name, WallspamRuleConfig.emptyline_enabled)
         except KeyError:
             # not set to we will just default to false.
             return False

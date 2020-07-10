@@ -338,7 +338,7 @@ class BaseRule:
         if not message_has_been_deleted:
             embed.add_field(
                 name="Message status",
-                value=f"`❌` Message has **not** been deleted\n[🔗 Click here to jump to message]({message.jump_url})",
+                value=f"`❌` Message has **not** been deleted - [🔗 Jump to message]({message.jump_url})",
                 inline=False,
             )
         else:
