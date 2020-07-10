@@ -62,7 +62,7 @@ class DiscordInviteRule(BaseRule, ABC):
 
         allowed_links = await self.get_allowed_links(guild)
 
-        r = re.compile(r'(discord\.(?:gg|io|me|li)|discord(?:app)?\.com\/invite)\/(\S+)', re.I)
+        r = re.compile(r"(discord\.(?:gg|io|me|li)|discord(?:app)?\.com\/invite)\/(\S+)", re.I)
 
         if allowed_links:
             filter_content = [x for x in content.split() if x not in allowed_links]

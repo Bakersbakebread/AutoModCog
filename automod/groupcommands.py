@@ -5,8 +5,16 @@ from redbot.core.utils.chat_formatting import box
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
 from .constants import ACTION_CONFIRMATION
-from .utils import error_message, check_success, chunks, thumbs_up_success, docstring_parameter, transform_bool, \
-    get_option_reaction, yes_or_no
+from .utils import (
+    error_message,
+    check_success,
+    chunks,
+    thumbs_up_success,
+    docstring_parameter,
+    transform_bool,
+    get_option_reaction,
+    yes_or_no,
+)
 from .converters import ToggleBool
 from tabulate import tabulate
 
@@ -260,6 +268,7 @@ class GroupCommands:
     """
     Commands specific to wall spam rule
     """
+
     @commands.group()
     @checks.mod_or_permissions(manage_messages=True)
     async def wallspamrule(self, ctx):
@@ -284,7 +293,9 @@ class GroupCommands:
     async def _emptyline_enable_command(self, ctx, enable: bool):
         """Toggle whether to treat emptyline spam as wallspam"""
         await self.wallspamrule.set_is_emptyline_offensive(ctx.guild, enable)
-        return await ctx.send(thumbs_up_success(f"Set treating emptyline as wallspam to `{enable}`."))
+        return await ctx.send(
+            thumbs_up_success(f"Set treating emptyline as wallspam to `{enable}`.")
+        )
 
     @_emptyline_group.command(name="threshold")
     async def _emptyline_threshold_command(self, ctx, threshold: int):
@@ -301,6 +312,7 @@ class GroupCommands:
     """
     Commands specific to discord invite rule
     """
+
     @commands.group()
     @checks.mod_or_permissions(manage_messages=True)
     async def inviterule(self, ctx):

@@ -22,9 +22,7 @@ class WallSpamRule(BaseRule):
             The bool of whether is enabled or disabled
         """
         await self.config.guild(guild).set_raw(
-            self.rule_name,
-            WallspamRuleConfig.emptyline_enabled,
-            value=is_enabled
+            self.rule_name, WallspamRuleConfig.emptyline_enabled, value=is_enabled
         )
 
     async def get_is_emptyline_offensive(self, guild: discord.Guild) -> bool:
@@ -36,7 +34,9 @@ class WallSpamRule(BaseRule):
             The guild where to get the setting for
         """
         try:
-            return await self.config.guild(guild).get_raw(self.rule_name, WallspamRuleConfig.emptyline_enabled)
+            return await self.config.guild(guild).get_raw(
+                self.rule_name, WallspamRuleConfig.emptyline_enabled
+            )
         except KeyError:
             # not set to we will just default to false.
             return False
@@ -52,9 +52,7 @@ class WallSpamRule(BaseRule):
             The number of empty lines that will be considered spam
         """
         await self.config.guild(guild).set_raw(
-                self.rule_name,
-                WallspamRuleConfig.emptyline_threshold,
-                value=number_of_lines
+            self.rule_name, WallspamRuleConfig.emptyline_threshold, value=number_of_lines
         )
 
     async def get_emptyline_threshold(self, guild: discord.Guild) -> int:
@@ -66,7 +64,9 @@ class WallSpamRule(BaseRule):
             the guild to get settings from
         """
         try:
-            return await self.config.guild(guild).get_raw(self.rule_name, WallspamRuleConfig.emptyline_threshold)
+            return await self.config.guild(guild).get_raw(
+                self.rule_name, WallspamRuleConfig.emptyline_threshold
+            )
         except KeyError:
             # not set, default to 5
             return 5
@@ -86,7 +86,9 @@ class WallSpamRule(BaseRule):
 
             is_checking_for_emptylines = await self.get_is_emptyline_offensive(message.guild)
             if is_checking_for_emptylines:
-                return await self._is_emptyline_spam(message)  # return True here if it is emptyline spam :-)
+                return await self._is_emptyline_spam(
+                    message
+                )  # return True here if it is emptyline spam :-)
 
             if is_wall_text or is_maybe_wall_text:
                 return True
