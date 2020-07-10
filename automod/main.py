@@ -196,10 +196,7 @@ class AutoMod(
             return
 
         # immune from automod actions
-        # if isinstance(author, discord.Member) and await self.bot.is_automod_immune(message.author):
-        #     return
-
-        if message.author.id != 280730525960896513:
+        if isinstance(author, discord.Member) and await self.bot.is_automod_immune(message.author):
             return
 
         # don't listen to other bots, no skynet here
