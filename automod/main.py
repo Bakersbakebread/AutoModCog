@@ -5,6 +5,7 @@ from redbot.core.commands import Cog
 from redbot.core import Config
 from redbot.core.data_manager import bundled_data_path
 
+from .rules.allowedextensions import AllowedExtensionsRule
 
 from .rules.config.models import InfractionInformation
 from .rules.imagedetection import ImageDetectionRule
@@ -62,6 +63,7 @@ class AutoMod(
         self.maxcharsrule = MaxCharsRule(self.config)
         self.wordfilterrule = WordFilterRule(self.config)
         self.imagedetectionrule = ImageDetectionRule(self.config)
+        self.allowedextensionsrule = AllowedExtensionsRule(self.config)
 
         self.rules_map = {
             "wallspamrule": self.wallspamrule,
@@ -72,6 +74,7 @@ class AutoMod(
             "maxcharsrule": self.maxcharsrule,
             "wordfilterrule": self.wordfilterrule,
             "imagedetectionrule": self.imagedetectionrule,
+            "allowedextensionsrule": self.allowedextensionsrule,
         }
 
     async def _take_action(
