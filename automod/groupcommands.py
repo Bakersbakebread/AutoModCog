@@ -5,7 +5,7 @@ from redbot.core.utils.chat_formatting import box
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
 from .constants import ACTION_CONFIRMATION
-from .rules.models import BlackOrWhiteList
+from .rules.config.models import BlackOrWhiteList
 from .utils import (
     error_message,
     check_success,
@@ -500,14 +500,54 @@ class GroupCommands:
         before, after = await self.mentionspamrule.set_threshold(ctx, threshold)
         await ctx.send(f"`🎯` Mention threshold changed from `{before}` to `{after}`")
 
-    # commands specific to wall spam rule
+    """
+    Commands specific to wall spam rule
+    """
+
     @commands.group()
     @checks.mod_or_permissions(manage_messages=True)
     async def wallspamrule(self, ctx):
         """Walls of text/emojis settings"""
         pass
 
-    # commands specific to discord invite rule
+    @wallspamrule.group(name="emptyline")
+    async def _emptyline_group(self, ctx):
+        """Emptyline wallspam settings.
+
+        Emptyline wallspam is defined as a message that has multiple empty lines.
+        **Example:**
+        ```
+        start
+        \n\n\n\n\n
+        end
+        ```
+        """
+        pass
+
+    @_emptyline_group.command(name="enable")
+    async def _emptyline_enable_command(self, ctx, enable: bool):
+        """Toggle whether to treat emptyline spam as wallspam"""
+        await self.wallspamrule.set_is_emptyline_offensive(ctx.guild, enable)
+        return await ctx.send(
+            thumbs_up_success(f"Set treating emptyline as wallspam to `{enable}`.")
+        )
+
+    @_emptyline_group.command(name="threshold")
+    async def _emptyline_threshold_command(self, ctx, threshold: int):
+        """Set the amount of new lines to consider a emptyline spam message offensive at.
+
+        Defaults to 5.
+        """
+        if threshold <= 1:
+            return await ctx.send("Emptyline threshold must be above 1.")
+
+        await self.wallspamrule.set_emptyline_threshold(ctx.guild, threshold)
+        return await ctx.send(thumbs_up_success(f"Set the emptyline threshold to `{threshold}`"))
+
+    """
+    Commands specific to discord invite rule
+    """
+
     @commands.group()
     @checks.mod_or_permissions(manage_messages=True)
     async def inviterule(self, ctx):

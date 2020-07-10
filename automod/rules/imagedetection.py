@@ -5,7 +5,7 @@ import logging
 
 from typing import Optional
 from .base import BaseRule
-from .models import InfractionInformation, EmbedField
+from .config.models import InfractionInformation, EmbedField
 from ..utils import transform_bool_to_emoji
 
 log = logging.getLogger(name="red.breadcogs.automod.imagedetection")

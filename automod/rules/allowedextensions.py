@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from redbot.core.utils.chat_formatting import box
 
 from .base import BaseRule
-from .models import InfractionInformation, BlackOrWhiteList
+from .config.models import InfractionInformation, BlackOrWhiteList
 
 WHITELIST_EXTENSIONS = "whitelist_extensions"
 BLACKLIST_EXTENSIONS = "blacklist_extensions"

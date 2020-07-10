@@ -6,7 +6,8 @@ from redbot.core import Config
 from redbot.core.data_manager import bundled_data_path
 
 from .rules.allowedextensions import AllowedExtensionsRule
-from .rules.models import InfractionInformation
+
+from .rules.config.models import InfractionInformation
 from .rules.imagedetection import ImageDetectionRule
 from .rules.wordfilter import WordFilterRule
 from .rules.wallspam import WallSpamRule

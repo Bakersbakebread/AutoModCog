@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
-from ..rules.base import BaseRule
+
+from ..base import BaseRule
 
 
 @dataclass
