@@ -82,18 +82,18 @@ class GroupCommands:
         """Blacklist or whitelist extensions"""
         pass
 
-    @allowedextensionsrule.group(name="whitelist")
+    @allowedextensionsrule.group(name="allowlist")
     @checks.mod_or_permissions(manage_messages=True)
-    async def _whitelist_extension_group(self, ctx):
-        """Add extensions to whitelist"""
+    async def _allowlist_extension_group(self, ctx):
+        """Add extensions to an allow list"""
         pass
 
-    @_whitelist_extension_group.command(name="channel")
+    @_allowlist_extension_group.command(name="channel")
     @checks.mod_or_permissions(manage_messages=True)
     async def _add_ext_channel_whitelist(
         self, ctx, channels: Greedy[discord.TextChannel], extensions
     ):
-        """Whitelist extensions in channels
+        """Allow list extensions in channels
 
         Extensions must be a comma separated list, without the period.
 
@@ -109,10 +109,10 @@ class GroupCommands:
         except ValueError as e:
             await ctx.send(error_message(e.args[0]))
 
-    @_whitelist_extension_group.command(name="group")
+    @_allowlist_extension_group.command(name="group")
     @checks.mod_or_permissions(manage_messages=True)
     async def _add_ext_group_whitelist(self, ctx, group_name: str, extensions):
-        """Whitelist extensions in a group
+        """Allow list extensions in a group
         Extensions must be a comma separated list, without the period.
             Example: jpeg,png,pfd
 
@@ -133,18 +133,19 @@ class GroupCommands:
         except ValueError as e:
             await ctx.send(error_message(e.args[0]))
 
-    @_whitelist_extension_group.command(name="show")
+    @_allowlist_extension_group.command(name="show")
     @checks.mod_or_permissions(manage_messages=True)
     async def _show_ext_whitelist_command(self, ctx):
-        """Display currently enabled whitelisted extensions"""
+        """Display currently enabled allow list extensions"""
         current_extensions = await self.allowedextensionsrule.get_whitelist_extensions(ctx.guild)
         embeds = []
+        values = []
         if not current_extensions:
             return await ctx.send("No extensions have been whitelisted.")
         for index, extension in enumerate(current_extensions):
             embed = discord.Embed(
                 title="Whitelisted extensions",
-                description=f"To delete run: `{ctx.prefix}allowedextensionsrule whitelist delete {index}`",
+                description=f"To delete run: `{ctx.prefix}allowedextensionsrule allowlist delete {index}`",
             )
             value = box(
                 NEW_LINE.join(
@@ -154,7 +155,8 @@ class GroupCommands:
                 else "+ Global",
                 "diff",
             )
-            embed.add_field(name=", ".join(extension.extensions), value=value)
+            extensions = ", ".join(extension.extensions)
+            embed.add_field(name=extensions, value=value)
             embeds.append(embed)
 
         if len(embeds) > 1:
@@ -162,7 +164,7 @@ class GroupCommands:
         else:
             await ctx.send(embed=embeds[0])
 
-    @_whitelist_extension_group.command(name="delete", aliases=["rem"])
+    @_allowlist_extension_group.command(name="delete", aliases=["rem"])
     @checks.mod_or_permissions(manage_messages=True)
     async def _delete_whitelist_ext_command(self, ctx, index: int):
         """Delete extension settings"""
@@ -177,16 +179,16 @@ class GroupCommands:
         except AttributeError:
             return await ctx.send(error_message("There is no extensions currently whitelist."))
 
-    @allowedextensionsrule.group(name="blacklist")
+    @allowedextensionsrule.group(name="denylist")
     @checks.mod_or_permissions(manage_messages=True)
-    async def _blacklist_extension_group(self, ctx):
-        """Add extensions to blacklist"""
+    async def _denylist_extension_group(self, ctx):
+        """Add extensions to deny list"""
         pass
 
-    @_blacklist_extension_group.command(name="show")
+    @_denylist_extension_group.command(name="show")
     @checks.mod_or_permissions(manage_messages=True)
     async def _show_ext_blacklist_command(self, ctx):
-        """Display currently enabled blacklisted extensions"""
+        """Display currently enabled deny list extensions"""
         current_extensions = await self.allowedextensionsrule.get_blacklist_extensions(ctx.guild)
         embeds = []
         if not current_extensions:
@@ -212,7 +214,7 @@ class GroupCommands:
         else:
             await ctx.send(embed=embeds[0])
 
-    @_blacklist_extension_group.command(name="delete", aliases=["rem"])
+    @_denylist_extension_group.command(name="delete", aliases=["rem"])
     @checks.mod_or_permissions(manage_messages=True)
     async def _delete_blacklist_ext_command(self, ctx, index: int):
         """Delete extension settings"""
@@ -228,12 +230,12 @@ class GroupCommands:
         except AttributeError:
             return await ctx.send(error_message("There is no extensions currently blacklisted."))
 
-    @_blacklist_extension_group.command(name="channel")
+    @_denylist_extension_group.command(name="channel")
     @checks.mod_or_permissions(manage_messages=True)
     async def _add_ext_channel_blacklist(
         self, ctx, channels: Greedy[discord.TextChannel], extensions
     ):
-        """Blacklist extensions in channels
+        """Denylist extensions in channels
 
         Extensions must be a comma seperated list, without the period.
 
@@ -249,10 +251,10 @@ class GroupCommands:
         except ValueError as e:
             await ctx.send(error_message(e.args[0]))
 
-    @_blacklist_extension_group.command(name="group")
+    @_denylist_extension_group.command(name="group")
     @checks.mod_or_permissions(manage_messages=True)
     async def _add_ext_group_blacklist(self, ctx, group_name: str, extensions: str):
-        """Blacklist extensions in a group
+        """Denylist extensions in a group
         Extensions must be a comma seperated list, without the period.
 
         Example: jpeg,png,pfd

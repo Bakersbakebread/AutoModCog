@@ -128,7 +128,7 @@ class AllowedExtensionsRule(BaseRule):
             else "+ Global",
             "diff",
         )
-        fmt_box = box(nl.join("+ {0}".format(ext) for ext in extension.channels), "diff")
+        fmt_box = box(nl.join("+ {0}".format(ext) for ext in extension.extensions), "diff")
         embed = discord.Embed(color=discord.Color.red(), description="Extensions deleted.")
         embed.add_field(name="Channels", value=chans, inline=False)
         embed.add_field(name="Extensions", value=fmt_box, inline=False)
