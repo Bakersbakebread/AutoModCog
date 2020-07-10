@@ -257,7 +257,9 @@ class GroupCommands:
         before, after = await self.mentionspamrule.set_threshold(ctx, threshold)
         await ctx.send(f"`🎯` Mention threshold changed from `{before}` to `{after}`")
 
-    # commands specific to wall spam rule
+    """
+    Commands specific to wall spam rule
+    """
     @commands.group()
     @checks.mod_or_permissions(manage_messages=True)
     async def wallspamrule(self, ctx):

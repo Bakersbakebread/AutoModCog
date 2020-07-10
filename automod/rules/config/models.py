@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ..rules.base import BaseRule
+from ..base import BaseRule
 
 
 @dataclass
