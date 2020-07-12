@@ -12,7 +12,6 @@ test_data = [
     (f"{BREAD_MENTION} This is a sentence", [], THRESHOLD, True),
     (f"{FAKE_MENTION} This is a sentence", [], THRESHOLD, True),
     (f"{BREAD_MENTION} {BREAD_MENTION} This is a sentence", [], THRESHOLD, True),
-
     (f"{BREAD_MENTION} This is a sentence", [BREAD_MENTION], THRESHOLD, False),
     (f"{FAKE_MENTION} This is a sentence", [BREAD_MENTION], THRESHOLD, True),
     (f"{FAKE_MENTION} {BREAD_MENTION} This is a sentence", [BREAD_MENTION], THRESHOLD, True),
@@ -22,5 +21,12 @@ test_data = [
 
 @pytest.mark.parametrize("message_content, allowed_mentions, threshold, expected", test_data)
 @pytest.mark.asyncio
-async def test_mentions_greater_than_threshold(message_content, allowed_mentions, threshold, expected):
-    assert await MentionSpamRule.mentions_greater_than_threshold(message_content, allowed_mentions, threshold) == expected
+async def test_mentions_greater_than_threshold(
+    message_content, allowed_mentions, threshold, expected
+):
+    assert (
+        await MentionSpamRule.mentions_greater_than_threshold(
+            message_content, allowed_mentions, threshold
+        )
+        == expected
+    )
