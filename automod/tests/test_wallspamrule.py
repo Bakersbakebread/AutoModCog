@@ -7,7 +7,7 @@ first_character_repeating_data = [
     ("1" * 501, True),
     ("1" * 400, False),
     ("1", False),
-    ("1 2", False)
+    ("1 2", False),
 ]
 
 wall_text_data = [
@@ -29,4 +29,3 @@ async def test_wallspam_first_character_repeating(message_content, expected):
 @pytest.mark.asyncio
 async def test_is_wall_text(message_content, expected):
     assert await WallSpamRule.is_wall_text(message_content) == expected
-
