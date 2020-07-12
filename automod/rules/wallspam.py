@@ -71,26 +71,34 @@ class WallSpamRule(BaseRule):
             # not set, default to 5
             return 5
 
-    async def _is_emptyline_spam(self, message: discord.Message) -> bool:
+    @staticmethod
+    async def is_emptyline_spam(message_content: str, threshold: int) -> bool:
         """Detects threshold of empty new lines in message"""
-        threshold = await self.get_emptyline_threshold(message.guild)
-        return "\n" * threshold in message.content
+        return "\n" * threshold in message_content
+
+    @staticmethod
+    async def first_character_repeating(message_content: str) -> bool:
+        message_content = message_content.split()
+        return len(message_content[0]) > 500
+
+    @staticmethod
+    async def is_wall_text(message_content: str) -> bool:
+        message_content = message_content.split()
+        return sum((item.count(message_content[0]) for item in message_content)) > 25
 
     async def is_offensive(
         self, message,
     ):
         try:
-            message_split = message.content.split()
-            is_wall_text = sum((item.count(message_split[0]) for item in message_split)) > 25
-            is_maybe_wall_text = len(message_split[0]) > 800
-
             is_checking_for_emptylines = await self.get_is_emptyline_offensive(message.guild)
             if is_checking_for_emptylines:
-                return await self._is_emptyline_spam(
-                    message
-                )  # return True here if it is emptyline spam :-)
+                threshold = await self.get_emptyline_threshold(message.guild)
+                return await self.is_emptyline_spam(message.content, threshold)
 
-            if is_wall_text or is_maybe_wall_text:
+            first_character_repeating = await self.first_character_repeating(message.content)
+            is_wall_text = await self.is_wall_text(message.content)
+
+            if is_wall_text or first_character_repeating:
                 return True
         except IndexError:
             # probably one word message.

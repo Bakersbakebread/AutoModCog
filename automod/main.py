@@ -1,3 +1,5 @@
+import dataclasses
+
 import discord
 import logging
 
@@ -86,6 +88,13 @@ class AutoMod(
 
         action_to_take = await rule.get_action_to_take(guild)
         self.bot.dispatch(f"automod_{rule.rule_name}", author, message)
+        self.bot.dispatch(
+            f"bread_autmod",
+            rule.rule_name,
+            author,
+            message,
+            dataclasses.asdict(is_offensive) if is_offensive else None,
+        )
         log.info(
             f"{rule.rule_name} - {author} ({author.id}) - {guild} ({guild.id}) - {channel} ({channel.id})"
         )
