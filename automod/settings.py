@@ -254,7 +254,7 @@ class Settings:
             if rulename not in self.rules_map:
                 nl = "\n"
                 return await ctx.send(
-                    await error_message(
+                    error_message(
                         f"`{rulename}` is not a valid rule. The options are:\n\n"
                         f"{nl.join('• `{0}`'.format(w) for w in self.rules_map)}"
                     )
