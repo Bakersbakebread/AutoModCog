@@ -197,11 +197,11 @@ class AutoMod(
         except discord.errors.NotFound:
             log.exception(f"Could not send announce embed as channel was deleted")
 
-    # @Cog.listener()
-    # async def on_message_edit(
-    #     self, before: discord.Message, after: discord.Message,
-    # ):
-    #     await self._listen_for_infractions(after)
+    @Cog.listener()
+    async def on_message_edit(
+        self, before: discord.Message, after: discord.Message,
+    ):
+        await self._listen_for_infractions(after)
 
     @Cog.listener(name="on_message_without_command")
     async def _listen_for_infractions(
