@@ -95,7 +95,7 @@ class AutoMod(
         action_to_take = await rule.get_action_to_take(guild)
         self.bot.dispatch(f"automod_{rule.rule_name}", author, message)
         self.bot.dispatch(
-            f"bread_autmod",
+            f"bread_automod",
             rule.rule_name,
             author,
             message,
