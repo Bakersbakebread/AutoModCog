@@ -1,16 +1,13 @@
-import asyncio
-from typing import Optional, Union
-
-import discord
-from redbot.core.commands import commands, Greedy
-from redbot.core import checks
 import logging
 
+import discord
+from redbot.core import checks
+from redbot.core.commands import commands, Greedy
 from redbot.core.utils.chat_formatting import box
 
+from .converters import ToggleBool
 from .rules.base import BaseRuleSettingsDisplay
 from .utils import transform_bool, error_message, docstring_parameter
-from .converters import ToggleBool
 
 log = logging.getLogger(name="red.breadcogs.automod")
 
@@ -208,6 +205,12 @@ class Settings:
         Change automod settings.
         """
         pass
+
+    @automodset.command(name="version", aliases=["v", "ver"])
+    async def _show_version(self, ctx):
+        """Show version of Automod"""
+        from .main import __version__
+        return await ctx.send(f"Current AutoMod version: `{__version__}`.")
 
     @automodset.group(name="channelgroup", aliases=["group", "chgroup"])
     async def channel_group(self, ctx):

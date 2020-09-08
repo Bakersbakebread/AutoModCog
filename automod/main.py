@@ -27,6 +27,9 @@ from .utils import maybe_add_role
 
 log = logging.getLogger(name="red.breadcogs.automod")
 
+# date | month | year
+__version__ = "08.09.2020"
+
 
 class AutoMod(
     Cog, Settings, GroupCommands,
