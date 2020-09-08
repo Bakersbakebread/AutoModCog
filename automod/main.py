@@ -1,3 +1,9 @@
+# date | month | year
+__version__ = "08.09.2020"
+__author__ = ("Bread#0007", 280730525960896513)
+__credits__ = ["xBlynd"]
+__status__ = "Development"
+
 import dataclasses
 
 import discord
@@ -26,9 +32,6 @@ from .settings import Settings
 from .utils import maybe_add_role
 
 log = logging.getLogger(name="red.breadcogs.automod")
-
-# date | month | year
-__version__ = "08.09.2020"
 
 
 class AutoMod(
@@ -194,11 +197,11 @@ class AutoMod(
         except discord.errors.NotFound:
             log.exception(f"Could not send announce embed as channel was deleted")
 
-    @Cog.listener()
-    async def on_message_edit(
-        self, before: discord.Message, after: discord.Message,
-    ):
-        await self._listen_for_infractions(after)
+    # @Cog.listener()
+    # async def on_message_edit(
+    #     self, before: discord.Message, after: discord.Message,
+    # ):
+    #     await self._listen_for_infractions(after)
 
     @Cog.listener(name="on_message_without_command")
     async def _listen_for_infractions(
@@ -206,6 +209,11 @@ class AutoMod(
     ):
         guild = message.guild
         author = message.author
+
+        if __status__ == "Development":
+            bread, bread_id = __author__
+            if author.id != bread_id:
+                return
 
         if not message.guild:
             return
