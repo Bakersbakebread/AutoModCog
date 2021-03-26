@@ -58,10 +58,10 @@ class Settings:
         return before, toggle
 
     async def get_all_settings(self, guild: discord.Guild) -> [discord.Embed]:
-        settings = []
-        for rule_name, rule in self.rules_map.items():
-            settings.append(await rule.get_settings(guild))
-        return settings
+        return [
+            await rule.get_settings(guild)
+            for rule_name, rule in self.rules_map.items()
+        ]
 
     async def get_rule_setting(
         self, guild: discord.Guild, rule_name: str
@@ -98,9 +98,7 @@ class Settings:
 
             embed.add_field(name="Enforced Channels", value=enforced_value)
             if setting.whitelisted_roles:
-                roles = []
-                for r in setting.whitelisted_roles:
-                    roles.append(guild.get_role(r).name)
+                roles = [guild.get_role(r).name for r in setting.whitelisted_roles]
                 whitelist_value = ", ".join("`{0}`".format(w) for w in roles)
             else:
                 whitelist_value = "No roles whitelisted."
@@ -122,14 +120,8 @@ class Settings:
         )
         for index, setting in enumerate(settings, 1):
             value = "```diff\n"
-            if setting.is_enabled:
-                value += "+ Enabled\n"
-            else:
-                value += "- Disabled\n"
-            if setting.is_deleting:
-                value += "+ Deleting\n"
-            else:
-                value += "- Not deleting\n"
+            value += "+ Enabled\n" if setting.is_enabled else "- Disabled\n"
+            value += "+ Deleting\n" if setting.is_deleting else "- Not deleting\n"
             value += f"---Action---\n{setting.action_to_take}"
             value += "```"
             embed.add_field(name=f"`{setting.rule_name}`", value=value)

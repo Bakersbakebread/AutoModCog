@@ -117,10 +117,7 @@ class BaseRule:
         if not enforced_channels:
             return True
 
-        if channel.id in enforced_channels:
-            return True
-
-        return False
+        return channel.id in enforced_channels
 
     # announcing
     @alru_cache(maxsize=32)
@@ -236,7 +233,7 @@ class BaseRule:
         """Removes role from whitelist"""
         await self._clear_cache(self.get_all_whitelisted_roles)
         roles = await self.config.guild(guild).get_raw(self.rule_name, "whitelist_roles",)
-        if not role.id in roles:
+        if role.id not in roles:
             raise ValueError("That role is not whitelisted")
 
         roles.remove(role.id)
@@ -352,9 +349,12 @@ class BaseRule:
     ):
         """Returns a settings embed"""
         is_enabled = await self.config.guild(guild).get_raw(self.rule_name)
-        desc = ""
-        for (k, v,) in is_enabled.items():
-            desc += f"**{OPTIONS_MAP[k]}** - `{v}`\n"
-        embed = discord.Embed(title=f"{self.rule_name} settings", description=desc,)
+        desc = "".join(
+            f"**{OPTIONS_MAP[k]}** - `{v}`\n"
+            for (
+                k,
+                v,
+            ) in is_enabled.items()
+        )
 
-        return embed
+        return discord.Embed(title=f"{self.rule_name} settings", description=desc,)
