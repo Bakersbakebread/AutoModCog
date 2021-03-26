@@ -105,13 +105,11 @@ class WordFilterRule(BaseRule):
     def remove_punctuation(sentence: str):
         from string import punctuation
 
-        no_punc = sentence.translate(str.maketrans("", "", punctuation))
-        return no_punc
+        return sentence.translate(str.maketrans("", "", punctuation))
 
     @staticmethod
     def no_mentions(sentence: str):
-        mentionless = re.sub(r"<@!?(\d+)>", "", sentence)
-        return mentionless
+        return re.sub(r"<@!?(\d+)>", "", sentence)
 
     async def is_filtered(self, sentence: str, filtered_words: [dict]):
         for word in filtered_words:

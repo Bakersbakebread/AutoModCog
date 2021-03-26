@@ -35,10 +35,7 @@ class SpamChecker:
             return True
 
         content_bucket = self.by_content.get_bucket(message)
-        if content_bucket.update_rate_limit(current):
-            return True
-
-        return False
+        return bool(content_bucket.update_rate_limit(current))
 
 
 class SpamRule(BaseRule):
@@ -61,7 +58,7 @@ class SpamRule(BaseRule):
             f"# {str(datetime.date.today())}\n# {len(list_of_ids)} total users.\n" f"----\n\n"
         )
         for chunk in users_chunked:
-            three_in_row = " ".join([str(uid) for uid in chunk])
+            three_in_row = " ".join(str(uid) for uid in chunk)
             string_to_return += f"{three_in_row}\n"
 
         return string_to_return
